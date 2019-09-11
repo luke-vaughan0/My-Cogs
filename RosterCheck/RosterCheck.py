@@ -665,9 +665,9 @@ class RosterCheck(commands.Cog):
             if roleChange != []:
                 if roleChange[0].name == "ESO":
                     print("ESO role added to", before)
+
                     SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
                     creds = await self.config.creds()
-                    await ctx.send("I can do stuff!")
 
                     service = build('sheets', 'v4', credentials=creds)
 
@@ -680,7 +680,14 @@ class RosterCheck(commands.Cog):
                     if not values:
                         print('No data found.')
                     else:
-                        print("done")
+                        found = False
+                        for row in values:
+                            if row[3] == str(after):
+                                print("User found")
+                                found = True
+                        if not found:
+                            print("Unknown user given eso role")
+
                     
 
     
