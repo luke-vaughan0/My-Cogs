@@ -6,6 +6,7 @@ import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+import asyncio
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
@@ -25,8 +26,9 @@ if listener is None:
 class RosterCheck(commands.Cog):
     """Manages the GoA roster"""
 
-    def __init__(self):
-        
+    def __init__(self, bot):
+        self.bot = bot
+
         tcreds = None
         # The file token.pickle stores the user's access and refresh tokens, and is
         # created automatically when the authorization flow completes for the first
@@ -378,7 +380,7 @@ class RosterCheck(commands.Cog):
                 apprenticeCount += 1
             elif memberRole == "New Recruit":
                 newCount += 1
-            message = message + "**" + memberRole + "** " +member + "\n"
+            message = message + "**" + memberRole + "** " + member + "\n"
             if len(message) > 1900:
                 await ctx.send(message)
                 message = ""
@@ -664,7 +666,9 @@ class RosterCheck(commands.Cog):
             roleChange = list(set(after.roles) - set(before.roles))
             if roleChange != []:
                 if roleChange[0].name == "ESO":
-                    print("ESO role added to", before)
+                    print("ESO role added to", after)
+                    print("Will check in an hour for roster")
+                    await asyncio.sleep(20)
 
                     SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
                     creds = await self.config.creds()
@@ -686,10 +690,21 @@ class RosterCheck(commands.Cog):
                                 print("User found")
                                 found = True
                         if not found:
-                            print("Unknown user given eso role")
-
-                    
-
-    
-    
-
+                            print("Unknown user", str(after), "given eso role")
+                            welcomeChannel = self.bot.get_guild(285175143104380928).get_channel(425707351874469908)
+                            botChannel = self.bot.get_guild(285175143104380928).get_channel(517788758008004608)
+                            staffChannel = self.bot.get_guild(285175143104380928).get_channel(439102408354693132)
+                            userMessages = []
+                            async for message in welcomeChannel.history(limit=200):
+                                if message.author == after:
+                                    userMessages.append(message)
+                            if len(userMessages) == 0:
+                                print("No messages found")
+                            else:
+                                found = False
+                                for message in userMessages:
+                                    if message.content.lower().find("eso") != -1:
+                                        print("Contains ESO:", message.content)
+                                        found = True
+                                if not found:
+                                    print("First Message:", userMessages[-1].content)
