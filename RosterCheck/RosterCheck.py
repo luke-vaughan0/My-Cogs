@@ -635,7 +635,7 @@ class RosterCheck(commands.Cog):
                 if roleChange[0].name == "ESO":
                     print("ESO role added to", after)
                     print("Will check in an hour for roster")
-                    await asyncio.sleep(20)
+                    await asyncio.sleep(3600)
 
                     SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
                     creds = await self.config.creds()
@@ -653,11 +653,15 @@ class RosterCheck(commands.Cog):
                     else:
                         found = False
                         for row in values:
+                            pos = row[3].find(" #")
+                            if pos != -1:
+                                row[3] = row[3][:pos] + row[3][(pos + 1):]
                             if row[3] == str(after):
                                 print("User found")
                                 found = True
                         if not found:
                             print("Unknown user", str(after), "given eso role")
+                            messageToSend = "A user " + str(after) + " was given the eso role but not added to the roster.\n"
                             welcomeChannel = self.bot.get_guild(285175143104380928).get_channel(425707351874469908)
                             botChannel = self.bot.get_guild(285175143104380928).get_channel(517788758008004608)
                             staffChannel = self.bot.get_guild(285175143104380928).get_channel(439102408354693132)
@@ -667,11 +671,24 @@ class RosterCheck(commands.Cog):
                                     userMessages.append(message)
                             if len(userMessages) == 0:
                                 print("No messages found")
+                                messageToSend += "They have not sent any recent messages so no account name could be found.\n"
                             else:
                                 found = False
                                 for message in userMessages:
                                     if message.content.lower().find("eso") != -1:
                                         print("Contains ESO:", message.content)
+                                        messageToSend += "A message containing ESO was found here:\n"
+                                        messageToSend += "https://discordapp.com/channels/" + \
+                                            str(message.guild.id) + "/" + \
+                                            str(message.channel.id) + "/" + \
+                                            str(message.id)
                                         found = True
                                 if not found:
-                                    print("First Message:", userMessages[-1].content)
+                                    message = userMessages[-1]
+                                    print("First Message:", message.content)
+                                    messageToSend += "Their first message is here:\n"
+                                    messageToSend += "https://discordapp.com/channels/" + \
+                                                     str(message.guild.id) + "/" + \
+                                                     str(message.channel.id) + "/" + \
+                                                     str(message.id)
+                            await botChannel.send(messageToSend)
