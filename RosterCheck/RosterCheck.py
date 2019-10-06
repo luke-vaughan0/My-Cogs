@@ -149,12 +149,13 @@ class RosterCheck(commands.Cog):
         creds = await self.config.creds()
 
         service = build('sheets', 'v4', credentials=creds)
+        async with ctx.typing():
         
-        # Call the Sheets API
-        sheet = service.spreadsheets()
-        result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                                    range=SAMPLE_RANGE_NAME).execute()
-        values = result.get('values', [])
+            # Call the Sheets API
+            sheet = service.spreadsheets()
+            result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+                                        range=SAMPLE_RANGE_NAME).execute()
+            values = result.get('values', [])
 
         if not values:
             print('No data found.')
@@ -197,15 +198,15 @@ class RosterCheck(commands.Cog):
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
 
         creds = await self.config.creds()
-        await ctx.send("I can do stuff!")
 
         service = build('sheets', 'v4', credentials=creds)
-        
-        # Call the Sheets API
-        sheet = service.spreadsheets()
-        result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                                    range=SAMPLE_RANGE_NAME).execute()
-        values = result.get('values', [])
+
+        async with ctx.typing():
+            # Call the Sheets API
+            sheet = service.spreadsheets()
+            result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+                                        range=SAMPLE_RANGE_NAME).execute()
+            values = result.get('values', [])
 
         if not values:
             print('No data found.')
@@ -524,16 +525,17 @@ class RosterCheck(commands.Cog):
             roleExempt = f.read().splitlines()
 
         service = build('sheets', 'v4', credentials=creds)
-        
-        # Call the Sheets API
-        sheet = service.spreadsheets()
-        result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                                    range=SAMPLE_RANGE_NAME).execute()
-        values = result.get('values', [])
-        added = []
-        removed = []
-
         async with ctx.typing():
+        
+            # Call the Sheets API
+            sheet = service.spreadsheets()
+            result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+                                        range=SAMPLE_RANGE_NAME).execute()
+            values = result.get('values', [])
+            added = []
+            removed = []
+
+
             for row in values:
                 if row[3] != "" and str(ctx.guild.get_member_named(row[3])) != "None":
                     rosterMembers.append(row[3])
