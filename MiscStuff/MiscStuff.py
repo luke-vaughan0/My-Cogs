@@ -3,6 +3,8 @@ from redbot.core import commands
 from redbot.core import Config
 import os
 import datetime
+import requests
+import random
 
 listener = getattr(commands.Cog, "listener", None)  # Trusty + Sinbad
 if listener is None:
@@ -34,16 +36,95 @@ class MiscStuff(commands.Cog):
 
     @commands.command()
     async def joindate(self, ctx):
-        """This does stuff!"""
+        """Prints the date you joined this server"""
 
         joinDate = ctx.author.joined_at.date()
 
         await ctx.send(str(joinDate))
 
+    @commands.command()
+    async def horoscope(self, ctx):
+        """Shows your 100% accurate horoscope for today"""
+
+        url = "https://www.horoscope.com/us/horoscopes/general/horoscope-general-daily-today.aspx?sign="
+        url += str((ctx.author.id % 12)+1)
+
+        response = requests.get(url)
+
+        bonus = ['One of the leaders got you a surprise. They will definitely remember to send you it. Definitely.',
+                    'In Cards Against Humanity, you will play a card that you think is funny, but nobody will laugh when it is read out. ',
+                    'You glow with your own special light. You should really lay off the radium. ',
+                    'You inspire strong feelings in everyone you meet. And strong smells too. ',
+                    'Club Penguin will return, but for every time you tell someone, it is pushed back another year. ',
+                    'You need to drink more water.',
+                    'It doesn’t take a rocket scientist to figure out what’s wrong with you. It takes about three. ',
+                    'Avoid the Sausage.',
+                    'Romance is blossoming between two guildies. You are neither of them. ',
+                    'You’re not the type of person who lets social conventions dictate how you live your life. I know, I’ve seen your #community-general chat history.',
+                    'You’ll finally find a person who loves you for who you are, but unfortunately, they’re a bit of a cunt. ',
+                    'It’s a great time to find romance in the guild if you’re the sort who thinks that’s even close to a good idea. ',
+                    'Posture check!',
+                    'This week, the guild will notice that thing you’ve been trying to hide. ',
+                    'Now is the best time to post a questionable meme. Definitely. Do it. ',
+                    'Your pessimism is usually misplaced, but it’ll be perfectly appropriate in #community-general next Thursday. ',
+                    'We know about that weird Discord server you joined. We promise not to tell.',
+                    'All your hard work will finally pay off, just not for you.',
+                    'It’s really fun to destroy things. We won’t judge.',
+                    'If you type out your password, it will appear as stars. Look: ************. You try it!']
+
+        horoscope = "Here is your horoscope for today, " + ctx.author.name + "\n"
+
+        try:
+            if random.randint(0, 50) == 0:
+                horoscope += bonus[random.randint(0, len(bonus)-1)]
+            else:
+                horoscope += response.text[response.text.find('</strong> - ') + 12:response.text.find("</p>")]
+            await ctx.send(horoscope)
+
+        except:
+            print(horoscope)
+            horoscope = "Hmm, having some problems with the crystal balls, try again later"
+            await ctx.send(horoscope)
+
+
+
+    @commands.command()
+    async def oldest(self, ctx, role=None):
+        """Lists the oldest users with an optional role"""
+        print(role)
+        roleID = 0
+        for item in ctx.guild.roles:
+            if item.name.lower() == role.lower():
+                roleID = item
+
+        if roleID != 0 and role is not None:
+            joinDates = []
+            for user in ctx.guild.members:
+                if role is None:
+                    if user.top_role.name != "Community Member":
+                        joinDates.append([user.joined_at, str(user)])
+                else:
+                    if roleID in user.roles:
+                        joinDates.append([user.joined_at, str(user)])
+
+            joinDates.sort()
+            if len(joinDates) > 10:
+                message = "The 10 oldest users with roles are:\n"
+                for i in range(0, 10):
+                    message += joinDates[i][1] + ", " + str(joinDates[i][0].date()) + "\n"
+            else:
+                message = "The oldest users with roles are:\n"
+                for i in range(0, len(joinDates)):
+                    message += joinDates[i][1] + ", " + str(joinDates[i][0].date()) + "\n"
+        else:
+            message = "Couldn't find that role"
+
+        await ctx.send(message)
+
 
     @commands.command()
     async def weekdays(self, ctx):
-        """This does stuff!"""
+        """Shows the days of the week people joined on the most"""
 
         days = [0, 0, 0, 0, 0, 0, 0]
         for member in ctx.guild.members:
