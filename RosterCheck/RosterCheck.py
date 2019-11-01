@@ -318,7 +318,7 @@ class RosterCheck(commands.Cog):
 
     @commands.command()
     @commands.has_role("Officer")
-    async def leftdiscord(self, ctx):
+    async def notondiscord(self, ctx):
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
         """This does stuff!"""
         # Your code will go here
@@ -332,65 +332,37 @@ class RosterCheck(commands.Cog):
         result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
                                     range=SAMPLE_RANGE_NAME).execute()
         values = result.get('values', [])
-        esoMembers = []
-        membersWithoutRole = []
-        rosterWithoutDiscord = []
+        neverJoined = []
+        leftDiscord = []
 
         if not values:
             print('No data found.')
         else:
-            for member in ctx.guild.members:
-                for roleToCheck in member.roles:
-                    if str(roleToCheck) == "ESO":
-                        esoMembers.append(str(member))
-        esoMembers.sort()
-        roleWithoutRoster = list(esoMembers)
-        for row in values:
-            if row[3] != "":
-                try:
-                    roleWithoutRoster.remove(row[3])
-                except ValueError:
-                    membersWithoutRole.append(row[3])
-        message = "Users with the eso role not on the roster: **" + str(len(roleWithoutRoster)) + "**\n"
-        apprenticeCount = 0
-        newCount = 0
+            for row in values:
+                if row[2] == "":
+                    break
+                elif row[3] == "":
+                    neverJoined.append(row[2])
+                elif str(ctx.guild.get_member_named(row[3])) == "None":
+                    leftDiscord.append(row[2])
 
-        for member in list(membersWithoutRole):
-            if str(ctx.guild.get_member_named(member)) == "None":
-                rosterWithoutDiscord.append(str(member))
-                membersWithoutRole.remove(str(member))
+        message = "Users that have left Discord: **" + str(len(leftDiscord)) + "**\n"
 
-        for member in roleWithoutRoster:
-            memberRole = str(ctx.guild.get_member_named(member).top_role)
-            if memberRole == "Apprentice":
-                apprenticeCount += 1
-            elif memberRole == "New Recruit":
-                newCount += 1
-            message = message + "**" + memberRole + "** " + member + "\n"
-            if len(message) > 1900:
-                await ctx.send(message)
-                message = ""
+        if len(leftDiscord) != 0:
+            for member in leftDiscord:
+                message = message + member + "\n"
         
         await ctx.send(message[:2000])
 
-        await ctx.send("**" + str(newCount) + "** New Recruits and **" + str(apprenticeCount) + "** Apprentices")
+        message = "Users that have never joined Discord: **" + str(len(neverJoined)) + "**\n"
 
-        message = "Users without the eso role on the roster: **" + str(len(membersWithoutRole)) + "**\n"
+        if len(neverJoined) != 0:
+            for member in neverJoined:
+                if len(message) > 1970:
+                    await ctx.send(message)
+                    message = ""
+                message = message + member + "\n"
 
-        for member in membersWithoutRole:
-            message = message + member + "\n"
-            if len(message) > 1900:
-                await ctx.send(message)
-                message = ""
-
-        await ctx.send(message)
-
-
-        message = "Users on the roster that have left Discord: **" + str(len(rosterWithoutDiscord)) + "**\n"
-
-        for member in rosterWithoutDiscord:
-            message = message + member + "\n"
-        
         await ctx.send(message[:2000])
 
     @commands.command()
