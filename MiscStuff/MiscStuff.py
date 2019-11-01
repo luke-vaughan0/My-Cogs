@@ -19,18 +19,36 @@ class MiscStuff(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        if os.path.exists('CustomAlerts.txt'):
-            with open("CustomAlerts.txt", "r") as f:
-                alertList = [line.split(",") for line in f]
-                for item in alertList:
-                    item[-1] = item[-1].rstrip("\n")
-        else:
-            with open("CustomAlerts.txt", "w"):
-                alertList = []
+        #if os.path.exists('CustomAlerts.txt'):
+        #    with open("CustomAlerts.txt", "r") as f:
+        #        alertList = [line.split(",") for line in f]
+        #        for item in alertList:
+         #           item[-1] = item[-1].rstrip("\n")
+        #else:
+        #    with open("CustomAlerts.txt", "w"):
+        #        alertList = []
+#
+        #if os.path.exists('filters.txt'):
+         #   with open("filters.txt", "r") as f:
+          #      filterList = [line.split(",") for line in f]
+           #     for item in filterList:
+            #        item[-1] = item[-1].rstrip("\n")
+        #else:
+         #   with open("filters.txt", "w"):
+          #      filterList = []
+        default_global = {
+            "alerts": [],
+            "filters": []
+        }
+
+        default_guild = {
+            #["207952624400465930", "I'm turning into an alcoholmetic", ""]
+        }
         
         self.config = Config.get_conf(self, identifier=6457)
-        self.config.register_global(
-            alerts=alertList
+        self.config.register_global(**default_global)
+        self.config.register_guild(
+            quotes=[]
         )
         
 
@@ -143,16 +161,9 @@ class MiscStuff(commands.Cog):
 
     @commands.command()
     async def alert(self, ctx, *message):
-        """This does stuff!"""
+        """Allows you to get notifications when particular words or phrases are mentioned"""
 
-        if os.path.exists('CustomAlerts.txt'):
-            with open("CustomAlerts.txt", "r") as f:
-                alertList = [line.split(",") for line in f]
-                for item in alertList:
-                    item[-1] = item[-1].rstrip("\n")
-        else:
-            with open("CustomAlerts.txt", "w"):
-                alertList = []
+        alertList = await self.config.alerts()
 
         userRow = -1
 
@@ -177,30 +188,68 @@ class MiscStuff(commands.Cog):
             message = message[:-1]
             if message in alertList[userRow][1:]:
                 alertList[userRow].remove(message)
+                if len(alertList[userRow]) == 1:
+                    alertList.pop(userRow)
                 sendMessage = message + " removed"
             else:
                 alertList[userRow].append(message)
                 sendMessage = message + " added"
-                
-        with open("CustomAlerts.txt", "w") as f:
-            fileWrite = ""
-            for i in alertList:
-                for j in i:
-                    fileWrite = fileWrite+j+","
-                fileWrite = fileWrite[:-1]+"\n"
-            f.write(fileWrite)
 
         await self.config.alerts.set(alertList)
 
         await ctx.send(sendMessage)
 
+    @commands.command()
+    @commands.has_permissions(manage_messages=True)
+    async def filter(self, ctx, message, role):
+        """Filters reactions on a message to a particular role"""
+
+        filterList = await self.config.filters()
+
+        messageRow = -1
+
+        if not role.isdigit():
+            for item in ctx.guild.roles:
+                if item.name.lower() == role.lower():
+                    role = str(item.id)
+                    break
+
+        for i, item in enumerate(filterList):
+            if message == item[0]:
+                messageRow = i
+                break
+
+        if messageRow == -1:
+            filterList.append([message])
+            messageRow = len(filterList) - 1
+
+        if role in filterList[messageRow][1:]:
+            filterList[messageRow].remove(role)
+            if len(filterList[messageRow]) == 1:
+                filterList.pop(messageRow)
+            sendMessage = role + " removed"
+        else:
+            filterList[messageRow].append(role)
+            sendMessage = role + " added"
+
+        await self.config.filters.set(filterList)
+
+        await ctx.send(sendMessage)
+
+
+    @commands.command()
+    async def quote(self, ctx, user, *message):  # TODO check username for id, name, name with disc, or tag
+        print(self.config.quotes())
+        temp = tuple(message)
+        message = ""
+        for item in temp:
+            message = message + item + " "
+        message = message[:-1]
+        await ctx.send("\"" + str(message) + "\" - " + str(user))
+
 
     @listener()
     async def on_message(self, message):
-        # delete set messages
-        if message.author.id == 582583001838518285 and message.content == "That command is disabled.":
-            await message.delete()
-
         # send messages on alerts
         alertList = await self.config.alerts()
         for i in alertList:
@@ -208,20 +257,36 @@ class MiscStuff(commands.Cog):
                 if message.author.id == int(i[0]):
                     break
                 if message.content.lower().find(j.lower()) != -1:
-                    userToDM = self.bot.get_user(int(i[0]))
-                    await userToDM.create_dm()
-                    userDM = userToDM.dm_channel
                     try:
-                        linkURL = "https://discordapp.com/channels/" + \
-                                  str(message.guild.id) + "/" + \
-                                  str(message.channel.id) + "/" + \
-                                  str(message.id)
-                        alertMessage = str(message.author.name) + " mentioned " + j + " in " + \
-                                       str(message.channel.name) + ":\n" + \
-                                       message.content + "\nLink to message: " + linkURL
-                        await userDM.send(alertMessage)
-                        print("["+str(datetime.datetime.now().hour) + ":" + str(datetime.datetime.now().minute) +
-                              "] Sent alert to", userToDM)
+                        userToDM = message.guild.get_member(int(i[0]))
+                        if message.channel.permissions_for(userToDM).read_messages:
+                            await userToDM.create_dm()
+                            userDM = userToDM.dm_channel
+                            linkURL = "https://discordapp.com/channels/" + \
+                                      str(message.guild.id) + "/" + \
+                                      str(message.channel.id) + "/" + \
+                                      str(message.id)
+                            alertMessage = str(message.author.name) + " mentioned " + j + " in " + \
+                                           str(message.channel.name) + ":\n" + \
+                                           message.content + "\nLink to message: " + linkURL
+                            await userDM.send(alertMessage)
+                            print("["+str(datetime.datetime.now().hour) + ":" + str(datetime.datetime.now().minute) +
+                                  "] Sent alert to", userToDM)
                     except AttributeError:
                         pass
-                    break
+                        break
+
+    @listener()
+    async def on_reaction_add(self, reaction, user):
+        # send messages on alerts
+        filterList = await self.config.filters()
+        if len(filterList) != 0:
+            for i in filterList:
+                if int(i[0]) == int(reaction.message.id):
+                    role = reaction.message.guild.get_role(int(i[1]))
+                    if role in user.roles:
+                        break
+                    else:
+                        print("removed a reaction from", user.name)
+                        await reaction.remove(user)
+
