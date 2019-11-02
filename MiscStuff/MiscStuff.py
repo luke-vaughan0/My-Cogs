@@ -19,37 +19,18 @@ class MiscStuff(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        #if os.path.exists('CustomAlerts.txt'):
-        #    with open("CustomAlerts.txt", "r") as f:
-        #        alertList = [line.split(",") for line in f]
-        #        for item in alertList:
-         #           item[-1] = item[-1].rstrip("\n")
-        #else:
-        #    with open("CustomAlerts.txt", "w"):
-        #        alertList = []
-#
-        #if os.path.exists('filters.txt'):
-         #   with open("filters.txt", "r") as f:
-          #      filterList = [line.split(",") for line in f]
-           #     for item in filterList:
-            #        item[-1] = item[-1].rstrip("\n")
-        #else:
-         #   with open("filters.txt", "w"):
-          #      filterList = []
         default_global = {
             "alerts": [],
             "filters": []
         }
 
         default_guild = {
-            #["207952624400465930", "I'm turning into an alcoholmetic", ""]
+            "quotes": []
         }
         
         self.config = Config.get_conf(self, identifier=6457)
         self.config.register_global(**default_global)
-        self.config.register_guild(
-            quotes=[]
-        )
+        self.config.register_guild(**default_guild)
         
 
     @commands.command()
