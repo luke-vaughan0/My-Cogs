@@ -7,6 +7,7 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import asyncio
+import time
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
@@ -421,36 +422,82 @@ class RosterCheck(commands.Cog):
 
     @commands.command()
     @commands.has_role("Officer")
-    async def recruitsnodiscord(self, ctx):
+    async def addtoroster(self, ctx, ingameName, discordName, rank):
+        """Adds a user to the roster"""
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
-        """This does stuff!"""
-        # Your code will go here
         creds = await self.config.creds()
-        await ctx.send("I can do stuff!")
+        ranks = {"wanderer": "7", "adventurer": "5", "honoraria": "4", "officer": "3",
+                 "leadership": "2", "guildmaster": "1"}
 
         service = build('sheets', 'v4', credentials=creds)
-        
+
         # Call the Sheets API
         sheet = service.spreadsheets()
         result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
                                     range=SAMPLE_RANGE_NAME).execute()
         values = result.get('values', [])
 
-        newRecruitsWithoutDiscord = []
+        ingameOnRoster = []
+        discordOnRoster = []
+        userform = [[time.strftime("%d/%m/%y %X")]]
 
         if not values:
             print('No data found.')
         else:
+            for count, row in enumerate(values,3):
+                if row[2] == "":
+                    break
             for row in values:
-                if row[1] == "9" and row[3] == "":
-                    newRecruitsWithoutDiscord.append(row[2])
+                ingameOnRoster.append(row[2])
+                discordOnRoster.append(row[3])
 
-        message = "New recruits who have not joined discord: **" + str(len(newRecruitsWithoutDiscord)) + "**\n"
+        error = False
+        if not rank.isdigit() or rank not in ["7", "5", "4", "3", "2", "1"]:
+            try:
+                rank = ranks[rank.lower()]
+            except KeyError:
+                await ctx.send("This rank could not be recognised")
+                error = True
+        userform[0].append(rank)
 
-        for member in newRecruitsWithoutDiscord:
-            message = message + member + "\n"
-        
-        await ctx.send(message[:2000])
+        if ingameName.find("#") != -1:
+            await ctx.send("This ingame name is not valid")
+            error = True
+        if str(ingameName) in ingameOnRoster:
+            await ctx.send("This ingame name is a duplicate")
+            error = True
+        userform[0].append(ingameName)
+
+        if discordName.isdigit():
+            discordMember = ctx.guild.get_member(int(discordName))
+        else:
+            discordMember = ctx.guild.get_member_named(discordName)
+
+        if str(discordMember) != "None":
+            if str(discordMember) in discordOnRoster:
+                await ctx.send("This discord name is a duplicate")
+                error = True
+            userform[0].append(str(discordMember))
+            userform[0].append(str(discordMember.id))
+            userform[0].append(discordMember.joined_at.strftime("%d/%m/%y"))
+        else:
+            await ctx.send("This Discord user could not be found")
+
+        if not error:
+            range_name = "'Guild Roster'!A" + str(count) + ":F" + str(count)
+
+            values = userform
+
+            body = {
+                'values': values
+            }
+            result = service.spreadsheets().values().update(
+                spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_name,
+                valueInputOption="RAW", body=body).execute()
+            await ctx.send("User added")
+        else:
+            await ctx.send("The user was not added")
+
 
 
     @commands.command()
