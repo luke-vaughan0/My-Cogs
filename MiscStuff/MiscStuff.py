@@ -5,6 +5,9 @@ import os
 import datetime
 import requests
 import random
+import discord
+import typing
+import time
 
 listener = getattr(commands.Cog, "listener", None)  # Trusty + Sinbad
 if listener is None:
@@ -182,18 +185,12 @@ class MiscStuff(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
-    async def filter(self, ctx, message, role):
+    async def filter(self, ctx, message, role: discord.Role):
         """Filters reactions on a message to a particular role"""
 
         filterList = await self.config.filters()
 
         messageRow = -1
-
-        if not role.isdigit():
-            for item in ctx.guild.roles:
-                if item.name.lower() == role.lower():
-                    role = str(item.id)
-                    break
 
         for i, item in enumerate(filterList):
             if message == item[0]:
@@ -204,14 +201,14 @@ class MiscStuff(commands.Cog):
             filterList.append([message])
             messageRow = len(filterList) - 1
 
-        if role in filterList[messageRow][1:]:
-            filterList[messageRow].remove(role)
+        if str(role.id) in filterList[messageRow][1:]:
+            filterList[messageRow].remove(str(role.id))
             if len(filterList[messageRow]) == 1:
                 filterList.pop(messageRow)
-            sendMessage = role + " removed"
+            sendMessage = role.name + " removed"
         else:
-            filterList[messageRow].append(role)
-            sendMessage = role + " added"
+            filterList[messageRow].append(str(role.id))
+            sendMessage = role.name + " added"
 
         await self.config.filters.set(filterList)
 
@@ -253,9 +250,9 @@ class MiscStuff(commands.Cog):
                             await userDM.send(alertMessage)
                             print("["+str(datetime.datetime.now().hour) + ":" + str(datetime.datetime.now().minute) +
                                   "] Sent alert to", userToDM)
+                        break
                     except AttributeError:
                         pass
-                        break
 
     @listener()
     async def on_reaction_add(self, reaction, user):
