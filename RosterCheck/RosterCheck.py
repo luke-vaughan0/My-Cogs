@@ -422,7 +422,7 @@ class RosterCheck(commands.Cog):
 
     @commands.command()
     @commands.has_role("Officer")
-    async def addtoroster(self, ctx, ingameName, discordName, rank):
+    async def addtoroster(self, ctx, ingameName, discordName, rank="7"):
         """Adds a user to the roster"""
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
         creds = await self.config.creds()
@@ -685,7 +685,6 @@ class RosterCheck(commands.Cog):
                             messageToSend = "A user " + str(after) + " was given the eso role but not added to the roster.\n"
                             welcomeChannel = self.bot.get_guild(285175143104380928).get_channel(425707351874469908)
                             botChannel = self.bot.get_guild(285175143104380928).get_channel(517788758008004608)
-                            staffChannel = self.bot.get_guild(285175143104380928).get_channel(439102408354693132)
                             userMessages = []
                             async for message in welcomeChannel.history(limit=200):
                                 if message.author == after:
@@ -704,6 +703,7 @@ class RosterCheck(commands.Cog):
                                             str(message.channel.id) + "/" + \
                                             str(message.id)
                                         found = True
+                                        break
                                 if not found:
                                     message = userMessages[-1]
                                     print("First Message:", message.content)
