@@ -7,6 +7,7 @@ import requests
 import random
 import discord
 import typing
+import asyncio
 import time
 
 listener = getattr(commands.Cog, "listener", None)  # Trusty + Sinbad
@@ -213,6 +214,44 @@ class MiscStuff(commands.Cog):
         await self.config.filters.set(filterList)
 
         await ctx.send(sendMessage)
+
+    @commands.command()
+    @commands.has_permissions(manage_messages=True)
+    async def clearupto(self, ctx, clearPoint: discord.Message):
+        """Deletes all messages up to a specified point"""
+        print("Working")
+        messages = await ctx.channel.history(limit=101).flatten()
+        messagesToDelete = []
+        found = False
+        for message in messages:
+            if message.id == clearPoint.id:
+                found = True
+                print("gottem")
+                break
+            else:
+                messagesToDelete.append(message)
+        print("still working")
+        if found:
+            warning = await ctx.send("Are you sure you want to delete " + str(len(messagesToDelete)) + " messages up to message beginning `" + clearPoint.content[:10] + "`?\nType Y to accept")
+
+            def check(m):
+                return m.content == 'Y' and m.channel == ctx.channel
+            try:
+                reply = await self.bot.wait_for('message', timeout=10.0, check=check)
+            except asyncio.TimeoutError:
+                errorMessage = await ctx.send("You didn't respond fast enough")
+                await asyncio.sleep(3)
+                await warning.delete()
+                await ctx.message.delete()
+                await errorMessage.delete()
+            else:
+                await reply.delete()
+                await warning.delete()
+                await ctx.channel.delete_messages(messagesToDelete)
+
+        else:
+            await ctx.send("Couldn't find a message to clear up to")
+
 
 
     @commands.command()
