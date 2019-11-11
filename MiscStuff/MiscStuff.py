@@ -9,6 +9,7 @@ import discord
 import typing
 import asyncio
 import time
+import copy
 
 listener = getattr(commands.Cog, "listener", None)  # Trusty + Sinbad
 if listener is None:
@@ -232,7 +233,8 @@ class MiscStuff(commands.Cog):
                 messagesToDelete.append(message)
         print("still working")
         if found:
-            warning = await ctx.send("Are you sure you want to delete " + str(len(messagesToDelete)) + " messages up to message beginning `" + clearPoint.content[:10] + "`?\nType Y to accept")
+            warning = await ctx.send("Are you sure you want to delete " + str(
+                len(messagesToDelete)) + " messages up to message beginning `" + clearPoint.content[:10] + "`?\nType Y to accept")
 
             def check(m):
                 return m.content == 'Y' and m.channel == ctx.channel
@@ -252,17 +254,197 @@ class MiscStuff(commands.Cog):
         else:
             await ctx.send("Couldn't find a message to clear up to")
 
+    @commands.command()
+    @commands.has_permissions(manage_messages=True)
+    async def clearbetween(self, ctx, start: discord.Message, end: discord.Message):
+        """Deletes all messages between two messages"""
+        print("Working")
+        messages = await ctx.channel.history(limit=101).flatten()
+        messagesToDelete = []
+        if start.created_at < end.created_at:
+            temp = start
+            start = copy.copy(end)
+            end = copy.copy(temp)
+        foundStart = False
+        foundEnd = False
+        for message in messages:
+            if not foundStart:
+                if message.id == start.id:
+                    foundStart = True
+                    print("gottem")
+            else:
+                if message.id == end.id:
+                    foundEnd = True
+                    print("gottem")
+                    break
+                else:
+                    messagesToDelete.append(message)
+        print("still working")
+        if foundEnd:
+            warning = await ctx.send("Are you sure you want to delete " + str(
+                len(messagesToDelete)) + " messages between `" + start.content[:10] + "` and " + end.content[:10] + "`?\nType Y to accept")
+
+            def check(m):
+                return m.content == 'Y' and m.channel == ctx.channel
+
+            try:
+                reply = await self.bot.wait_for('message', timeout=10.0, check=check)
+            except asyncio.TimeoutError:
+                errorMessage = await ctx.send("You didn't respond fast enough")
+                await asyncio.sleep(3)
+                await warning.delete()
+                await ctx.message.delete()
+                await errorMessage.delete()
+            else:
+                await reply.delete()
+                await warning.delete()
+                await ctx.message.delete()
+                await ctx.channel.delete_messages(messagesToDelete)
+
+        else:
+            await ctx.send("Couldn't find one of the messages to clear between")
+
+    @commands.command()
+    @commands.has_permissions(manage_messages=True)
+    async def slowclearbetween(self, ctx, start: discord.Message, end: discord.Message):
+        """Deletes all messages between two messages, slowly"""
+        print("Working")
+        messages = await ctx.channel.history(limit=101).flatten()
+        messagesToDelete = []
+        if start.created_at < end.created_at:
+            temp = start
+            start = copy.copy(end)
+            end = copy.copy(temp)
+        foundStart = False
+        foundEnd = False
+        for message in messages:
+            if not foundStart:
+                if message.id == start.id:
+                    foundStart = True
+                    print("gottem")
+            else:
+                if message.id == end.id:
+                    foundEnd = True
+                    print("gottem")
+                    break
+                else:
+                    messagesToDelete.append(message)
+        print("still working")
+        if foundEnd:
+            warning = await ctx.send("Are you sure you want to delete " + str(
+                len(messagesToDelete)) + " messages between `" + start.content[:10] + "` and " + end.content[
+                                                                                                 :10] + "`?\nType Y to accept")
+
+            def check(m):
+                return m.content == 'Y' and m.channel == ctx.channel
+
+            try:
+                reply = await self.bot.wait_for('message', timeout=10.0, check=check)
+            except asyncio.TimeoutError:
+                errorMessage = await ctx.send("You didn't respond fast enough")
+                await asyncio.sleep(3)
+                await warning.delete()
+                await ctx.message.delete()
+                await errorMessage.delete()
+            else:
+                await reply.delete()
+                await warning.delete()
+                await ctx.message.delete()
+                if len(messagesToDelete) > 30:
+                    errorMessage = await ctx.send("Sorry, that's too many messages to slow delete")
+                    await asyncio.sleep(3)
+                    await errorMessage.delete()
+                else:
+                    for message in messagesToDelete:
+                        await message.delete()
+
+
+        else:
+            await ctx.send("Couldn't find one of the messages to clear between")
+
 
 
     @commands.command()
-    async def quote(self, ctx, user, *message):  # TODO check username for id, name, name with disc, or tag
-        print(self.config.quotes())
+    async def addquote(self, ctx, user: typing.Union[discord.Member, str], *message):
+        quoteList = await self.config.guild(ctx.guild).quotes()
         temp = tuple(message)
         message = ""
         for item in temp:
             message = message + item + " "
         message = message[:-1]
-        await ctx.send("\"" + str(message) + "\" - " + str(user))
+        error = False
+
+        if message[:1] == '"' and message[-1:] == '"':
+            message = message[1:-1]
+
+        if type(user) == str:
+            warning = await ctx.send("This user is not on the server. Do you wish to continue?\nType Y to continue")
+
+
+            def check(m):
+                return m.content == 'Y' and m.channel == ctx.channel
+
+            try:
+                reply = await self.bot.wait_for('message', timeout=10.0, check=check)
+                await reply.delete()
+
+            except asyncio.TimeoutError:
+                await ctx.send("No response given, quote was not added")
+                error = True
+            await warning.delete()
+
+        if not error:
+            if type(user) != str:
+                quoteList.append([int(user.id), message, time.strftime("%d/%m/%y")])
+            else:
+                quoteList.append([str(user), message, time.strftime("%d/%m/%y")])
+            await self.config.guild(ctx.guild).quotes.set(quoteList)
+
+            await ctx.send("Quote added")
+
+    @commands.command()
+    async def quotelist(self, ctx):
+        quoteList = await self.config.guild(ctx.guild).quotes()
+        message = ""
+        long = False
+        for quote in quoteList:
+            message = message + '"' + quote[1] + '" - '
+            if type(quote[0]) == int:
+                message = message + self.bot.get_user(quote[0]).name
+            else:
+                message = message + quote[0]
+            message = message + " " + quote[2] + "\n"
+            if len(message) > 1900:
+                long = True
+                await ctx.send(message)
+                message = ""
+        if message == "" and not long:
+            message = "No quotes for this server yet!"
+        await ctx.send(message)
+
+    @commands.command()
+    @commands.is_owner()
+    async def delquote(self, ctx, quoteToDel: int):
+        quoteList = await self.config.guild(ctx.guild).quotes()
+
+        warning = await ctx.send("You are about to delete quote \"" + quoteList[quoteToDel][1] + "\", do you wish to continue?")
+
+        def check(m):
+            return m.content == 'Y' and m.channel == ctx.channel
+
+        try:
+            reply = await self.bot.wait_for('message', timeout=10.0, check=check)
+            await reply.delete()
+            quoteList.pop(quoteToDel)
+            await self.config.guild(ctx.guild).quotes.set(quoteList)
+
+        except asyncio.TimeoutError:
+            end = await ctx.send("No response given, quote was not deleted")
+            await asyncio.sleep(3)
+            await end.delete()
+            await ctx.delete()
+        await warning.delete()
+
 
 
     @listener()
