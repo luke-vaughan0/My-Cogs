@@ -476,7 +476,9 @@ class MiscStuff(commands.Cog):
             for j in i[1:]:
                 if message.author.id == int(i[0]):
                     break
-                if message.content.lower().find(j.lower()) != -1:
+                foundAt = message.content.lower().find(j.lower())
+
+                if foundAt != -1 and (message.content[foundAt-1] in [" "] or foundAt == 0) and (message.content[foundAt + len(j)] in [" ", "'", "s"] or foundAt == len(message.content)+len(j)-1):
                     try:
                         userToDM = message.guild.get_member(int(i[0]))
                         if message.channel.permissions_for(userToDM).read_messages:
