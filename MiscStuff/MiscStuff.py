@@ -403,23 +403,44 @@ class MiscStuff(commands.Cog):
             await ctx.send("Quote added")
 
     @commands.command()
-    async def quotelist(self, ctx):
+    async def quotelist(self, ctx, check: typing.Union[discord.Member, str] = ""):
         quoteList = await self.config.guild(ctx.guild).quotes()
         message = ""
+        search = [""]
+        if check != "":
+            if type(check) == discord.Member:
+                search = ["User", check.id]
+            elif type(check) == str and not check.isdigit():
+                search = ["User", check]
+            elif len(check) == 4 or len(check) == 2:
+                search = ["Year", check[-2:]]
+
         long = False
         for quote in quoteList:
+            if search[0] == "User":
+                if search[1] != quote[0]:
+                    continue
+            elif search[0] == "Year":
+                if search[1] != quote[2][-2:]:
+                    continue
+
             message = message + '"' + quote[1] + '" - '
+
             if type(quote[0]) == int:
                 message = message + self.bot.get_user(quote[0]).name
             else:
                 message = message + quote[0]
+
             message = message + " " + quote[2] + "\n"
-            if len(message) > 1900:
+
+            if len(message) > 1800:
                 long = True
                 await ctx.send(message)
                 message = ""
         if message == "" and not long:
-            message = "No quotes for this server yet!"
+            message = "No quotes found"
+            if search[0] != "":
+                message = message + " for " + search[0] + " " + search[1]
         await ctx.send(message)
 
     @commands.command()
