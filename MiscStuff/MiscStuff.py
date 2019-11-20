@@ -416,7 +416,7 @@ class MiscStuff(commands.Cog):
                 search = ["Year", check[-2:]]
 
         long = False
-        for quote in quoteList:
+        for i, quote in enumerate(quoteList):
             if search[0] == "User":
                 if search[1] != quote[0]:
                     continue
@@ -424,14 +424,17 @@ class MiscStuff(commands.Cog):
                 if search[1] != quote[2][-2:]:
                     continue
 
-            message = message + '"' + quote[1] + '" - '
+            message = message + str(i+1) + ') "' + quote[1] + '" - '
 
             if type(quote[0]) == int:
-                message = message + self.bot.get_user(quote[0]).name
+                try:
+                    message = message + ctx.guild.get_member(quote[0]).nick
+                except TypeError:
+                    message = message + self.bot.get_user(quote[0]).name
             else:
                 message = message + quote[0]
 
-            message = message + " " + quote[2] + "\n"
+            message = message + " 20" + quote[2][-2:] + "\n"
 
             if len(message) > 1800:
                 long = True
@@ -478,7 +481,14 @@ class MiscStuff(commands.Cog):
                     break
                 foundAt = message.content.lower().find(j.lower())
 
-                if foundAt != -1 and (message.content[foundAt-1] in [" "] or foundAt == 0) and (message.content[foundAt + len(j)] in [" ", "'", "s"] or foundAt == len(message.content)+len(j)-1):
+                def endCheck(found):
+                    try:
+                        result = message.content[found + len(j)] in [" ", "'", "s"]
+                    except IndexError:
+                        result = found == len(message.content)-len(j)
+                    return result
+
+                if foundAt != -1 and (message.content[foundAt-1] in [" "] or foundAt == 0) and endCheck(foundAt):
                     try:
                         userToDM = message.guild.get_member(int(i[0]))
                         if message.channel.permissions_for(userToDM).read_messages:
