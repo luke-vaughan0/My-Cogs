@@ -713,3 +713,49 @@ class RosterCheck(commands.Cog):
                                                      str(message.channel.id) + "/" + \
                                                      str(message.id)
                             await botChannel.send(messageToSend)
+
+    @listener()
+    async def on_member_remove(self, member):
+        leavers = self.bot.get_guild(285175143104380928).get_channel(517788855882088466)
+        esoRole = self.bot.get_guild(285175143104380928).get_role(356874800502931457)
+        gw2Role = self.bot.get_guild(285175143104380928).get_role(356874876125970432)
+        comRole = self.bot.get_guild(285175143104380928).get_role(304714006411739156)
+        message = str(member) + " has just left\n"
+        if len(member.roles) == 1:
+            message = message + "They had no roles"
+        elif esoRole in member.roles:
+            message = message + "They were an ESO " + member.top_role
+
+            SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+            creds = await self.config.creds()
+
+            service = build('sheets', 'v4', credentials=creds)
+
+            # Call the Sheets API
+            sheet = service.spreadsheets()
+            result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+                                        range=SAMPLE_RANGE_NAME).execute()
+            values = result.get('values', [])
+
+            ign = ""
+            for row in values:
+                pos = row[3].find(" #")
+                if pos != -1:
+                    row[3] = row[3][:pos] + row[3][(pos + 1):]
+                if row[3] == str(member):
+                    print("User found")
+                    ign = row[2]
+                    break
+            if ign != "":
+                message = message + " with ingame name " + ign
+            else:
+                message = message + " but an unknown ingame name"
+        elif gw2Role in member.roles:
+            message = message + "They were a GW2 " + member.top_role
+        elif comRole in member.roles:
+            message = message + "They were a community member"
+        else:
+            message = message + "They were a " + member.top_role
+
+        print(message)
+
