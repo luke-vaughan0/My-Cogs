@@ -1,7 +1,6 @@
 from __future__ import print_function
 from redbot.core import commands
 from redbot.core import Config
-import os
 import datetime
 import requests
 import random
