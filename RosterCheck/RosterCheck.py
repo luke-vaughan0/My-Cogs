@@ -391,6 +391,11 @@ class RosterCheck(commands.Cog):
             for row in values:
                 if row[3] == "":
                     member = ctx.guild.get_member_named(row[2])
+                    if str(member) == "None":
+                        for discordMember in ctx.guild.members:
+                            if discordMember.name.lower() == row[2].lower():
+                                member = discordMember
+                                break
                     if str(member) != "None" and member.name.lower() == (row[2]).lower():
                         namesToUpdate.append([str(member)])
                         actualNames.append(str(member))
@@ -716,6 +721,7 @@ class RosterCheck(commands.Cog):
 
     @listener()
     async def on_member_remove(self, member):
+        print("someone left")
         leavers = self.bot.get_guild(285175143104380928).get_channel(517788855882088466)
         esoRole = self.bot.get_guild(285175143104380928).get_role(356874800502931457)
         gw2Role = self.bot.get_guild(285175143104380928).get_role(356874876125970432)
@@ -724,7 +730,7 @@ class RosterCheck(commands.Cog):
         if len(member.roles) == 1:
             message = message + "They had no roles"
         elif esoRole in member.roles:
-            message = message + "They were an ESO " + member.top_role
+            message = message + "They were an ESO " + member.top_role.name
 
             SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
             creds = await self.config.creds()
@@ -751,11 +757,11 @@ class RosterCheck(commands.Cog):
             else:
                 message = message + " but an unknown ingame name"
         elif gw2Role in member.roles:
-            message = message + "They were a GW2 " + member.top_role
+            message = message + "They were a GW2 " + member.top_role.name
         elif comRole in member.roles:
             message = message + "They were a community member"
         else:
-            message = message + "They were a " + member.top_role
-
+            message = message + "They were a " + member.top_role.name
         print(message)
+        await leavers.send(message)
 
