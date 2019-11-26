@@ -64,8 +64,8 @@ class vote(commands.Cog):
         if reaction.message.channel.id in channels:
             up = await self.config.channel(reaction.message.channel).upemote()
             down = await self.config.channel(reaction.message.channel).downemote()
-            pin = await self.config.channel(reaction.message.channel).downemote()
-            remove = await self.config.channel(reaction.message.channel).downemote()
+            pin = await self.config.channel(reaction.message.channel).pin()
+            remove = await self.config.channel(reaction.message.channel).remove()
             if reaction.emoji.id == up or reaction.emoji.id == down:
                 if user == reaction.message.author:
                     await reaction.remove(user)
