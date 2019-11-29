@@ -487,6 +487,7 @@ class RosterCheck(commands.Cog):
             userform[0].append(discordMember.joined_at.strftime("%d/%m/%y"))
         else:
             await ctx.send("This Discord user could not be found")
+            error = True
 
         if not error:
             range_name = "'Guild Roster'!A" + str(count) + ":F" + str(count)
@@ -726,7 +727,7 @@ class RosterCheck(commands.Cog):
         esoRole = self.bot.get_guild(285175143104380928).get_role(356874800502931457)
         gw2Role = self.bot.get_guild(285175143104380928).get_role(356874876125970432)
         comRole = self.bot.get_guild(285175143104380928).get_role(304714006411739156)
-        message = str(member) + " has just left\n"
+        message = str(member) + " (" + str(member.id) + ") has just left\n"
         if len(member.roles) == 1:
             message = message + "They had no roles"
         elif esoRole in member.roles:
@@ -756,6 +757,8 @@ class RosterCheck(commands.Cog):
                 message = message + " with ingame name " + ign
             else:
                 message = message + " but an unknown ingame name"
+            if gw2Role in member.roles:
+                message = message + "\nThey were a GW2 " + member.top_role.name
         elif gw2Role in member.roles:
             message = message + "They were a GW2 " + member.top_role.name
         elif comRole in member.roles:
@@ -764,4 +767,8 @@ class RosterCheck(commands.Cog):
             message = message + "They were a " + member.top_role.name
         print(message)
         await leavers.send(message)
-
+        await asyncio.sleep(3)
+        async for message in leavers.history(limit=3):
+            if message.content.find(str(member)) == 2 and message.author.id == 159985870458322944:
+                await message.add_reaction("white_check_mark")
+                break
