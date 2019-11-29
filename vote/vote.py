@@ -70,11 +70,11 @@ class vote(commands.Cog):
                 if user == reaction.message.author:
                     await reaction.remove(user)
                 if reaction.emoji.id == up and pin != 0:
-                    if reaction.count < pin:
+                    if reaction.count > pin:
                         print("pinned a great meme")
                         await reaction.message.pin()
                 if reaction.emoji.id == down and remove != 0:
-                    if reaction.count < remove:
+                    if reaction.count > remove:
                         print("deleted a bad meme")
                         await reaction.message.delete()
 
