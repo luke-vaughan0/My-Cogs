@@ -770,5 +770,5 @@ class RosterCheck(commands.Cog):
         await asyncio.sleep(3)
         async for message in leavers.history(limit=3):
             if message.content.find(str(member)) == 2 and message.author.id == 159985870458322944:
-                await message.add_reaction("white_check_mark")
+                await message.delete()
                 break
