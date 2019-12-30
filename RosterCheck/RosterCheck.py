@@ -436,73 +436,105 @@ class RosterCheck(commands.Cog):
 
         service = build('sheets', 'v4', credentials=creds)
 
-        # Call the Sheets API
-        sheet = service.spreadsheets()
-        result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                                    range=SAMPLE_RANGE_NAME).execute()
-        values = result.get('values', [])
+        async with ctx.typing():
 
-        ingameOnRoster = []
-        discordOnRoster = []
-        userform = [[time.strftime("%d/%m/%y %X")]]
+            # Call the Sheets API
+            sheet = service.spreadsheets()
+            result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+                                        range=SAMPLE_RANGE_NAME).execute()
+            values = result.get('values', [])
 
-        if not values:
-            print('No data found.')
-        else:
-            for count, row in enumerate(values,3):
-                if row[2] == "":
-                    break
-            for row in values:
-                ingameOnRoster.append(row[2])
-                discordOnRoster.append(row[3])
+            ingameOnRoster = []
+            discordOnRoster = []
+            userform = [[time.strftime("%d/%m/%y %X")]]
 
-        error = False
-        if not rank.isdigit() or rank not in ["7", "5", "4", "3", "2", "1"]:
-            try:
-                rank = ranks[rank.lower()]
-            except KeyError:
-                await ctx.send("This rank could not be recognised")
+            if discordName.isdigit():
+                discordMember = ctx.guild.get_member(int(discordName))
+            else:
+                discordMember = ctx.guild.get_member_named(discordName)
+
+            if not values:
+                print('No data found.')
+            else:
+                for count, row in enumerate(values,3):
+                    if row[2] == "":
+                        break
+                for row in values:
+                    ingameOnRoster.append(row[2])
+                    discordOnRoster.append(row[3])
+
+            error = False
+            special = False
+            if not rank.isdigit() or rank not in ["7", "5", "4", "3", "2", "1"]:
+                try:
+                    rank = ranks[rank.lower()]
+                except KeyError:
+                    await ctx.send("This rank could not be recognised")
+                    error = True
+            userform[0].append(rank)
+
+            if ingameName.find("#") != -1:
+                await ctx.send("This ingame name is not valid")
                 error = True
-        userform[0].append(rank)
+            if str(ingameName) in ingameOnRoster:
+                if discordOnRoster[ingameOnRoster.index(str(ingameName))] == "":
+                    await ctx.send("This ingame name is on the roster, would you like to add a discord name only?\nType Y to accept")
 
-        if ingameName.find("#") != -1:
-            await ctx.send("This ingame name is not valid")
-            error = True
-        if str(ingameName) in ingameOnRoster:
-            await ctx.send("This ingame name is a duplicate")
-            error = True
-        userform[0].append(ingameName)
+                    def check(m):
+                        return m.content == 'Y' and m.channel == ctx.channel
 
-        if discordName.isdigit():
-            discordMember = ctx.guild.get_member(int(discordName))
-        else:
-            discordMember = ctx.guild.get_member_named(discordName)
+                    try:
+                        reply = await self.bot.wait_for('message', timeout=10.0, check=check)
+                    except asyncio.TimeoutError:
+                        await ctx.send("No response given")
+                        error = True
+                    else:
+                        special = True
+                        pos = ingameOnRoster.index(str(ingameName)) + 3
+                        range_name = "'Guild Roster'!D" + str(pos) + ":F" + str(pos)
 
-        if str(discordMember) != "None":
-            if str(discordMember) in discordOnRoster:
-                await ctx.send("This discord name is a duplicate")
+                        values = [[str(discordMember), str(discordMember.id), discordMember.joined_at.strftime("%d/%m/%y")]]
+
+                        body = {
+                            'values': values
+                        }
+                        result = service.spreadsheets().values().update(
+                            spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_name,
+                            valueInputOption="RAW", body=body).execute()
+                        await ctx.send("User added")
+
+
+                else:
+                    await ctx.send("This ingame name is a duplicate")
+                    error = True
+            userform[0].append(ingameName)
+
+            if str(discordMember) != "None":
+                if str(discordMember) in discordOnRoster:
+                    await ctx.send("This discord name is a duplicate")
+                    error = True
+                userform[0].append(str(discordMember))
+                userform[0].append(str(discordMember.id))
+                userform[0].append(discordMember.joined_at.strftime("%d/%m/%y"))
+            else:
+                await ctx.send("This Discord user could not be found")
                 error = True
-            userform[0].append(str(discordMember))
-            userform[0].append(str(discordMember.id))
-            userform[0].append(discordMember.joined_at.strftime("%d/%m/%y"))
-        else:
-            await ctx.send("This Discord user could not be found")
-            error = True
 
-        if not error:
-            range_name = "'Guild Roster'!A" + str(count) + ":F" + str(count)
+            if not special:
+                if not error:
+                    range_name = "'Guild Roster'!A" + str(count) + ":F" + str(count)
 
-            values = userform
+                    values = userform
 
-            body = {
-                'values': values
-            }
-            result = service.spreadsheets().values().update(
-                spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_name,
-                valueInputOption="RAW", body=body).execute()
-            await ctx.send("User added")
-        else:
-            await ctx.send("The user was not added")
+                    body = {
+                        'values': values
+                    }
+                    result = service.spreadsheets().values().update(
+                        spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_name,
+                        valueInputOption="RAW", body=body).execute()
+                    await ctx.send("User added")
+                else:
+                    await ctx.send("The user was not added")
 
 
 
@@ -722,7 +754,6 @@ class RosterCheck(commands.Cog):
 
     @listener()
     async def on_member_remove(self, member):
-        print("someone left")
         leavers = self.bot.get_guild(285175143104380928).get_channel(517788855882088466)
         esoRole = self.bot.get_guild(285175143104380928).get_role(356874800502931457)
         gw2Role = self.bot.get_guild(285175143104380928).get_role(356874876125970432)
@@ -765,7 +796,6 @@ class RosterCheck(commands.Cog):
             message = message + "They were a community member"
         else:
             message = message + "They were a " + member.top_role.name
-        print(message)
         await leavers.send(message)
         await asyncio.sleep(3)
         async for message in leavers.history(limit=3):
