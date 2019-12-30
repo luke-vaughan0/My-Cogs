@@ -217,6 +217,26 @@ class MiscStuff(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
+    async def filternow(self, ctx, messageid: int, role: discord.Role, channel: discord.TextChannel = None):
+        """One time removal of all incorrect reactions"""
+        reactsRemoved = 0
+        if not channel:
+            channel = ctx.channel
+        async for message in channel.history(limit=200):
+            if message.id == messageid:
+                for reaction in message.reactions:
+                    async for user in reaction.users():
+                        if role not in user.roles:
+                            print("removed a reaction from", user.name)
+                            reactsRemoved += 1
+                            await reaction.remove(user)
+#
+        await ctx.send("Removed " + str(reactsRemoved) + " reactions")
+
+
+
+    @commands.command()
+    @commands.has_permissions(manage_messages=True)
     async def clearupto(self, ctx, clearPoint: discord.Message):
         """Deletes all messages up to a specified point"""
         print("Working")
