@@ -13,7 +13,7 @@ import time
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
 # The ID and range of a sample spreadsheet.
-SAMPLE_SPREADSHEET_ID = '1rhzwbQwW3nflIbcCWskDL0OAxj96pxhHXUAfcB3QWVs'
+SAMPLE_SPREADSHEET_ID = '1qnOH3VU71Iim3KdgdZeUVyqfLa6EpcVe3kgIdQc84n8'
 
 
 listener = getattr(commands.Cog, "listener", None)  # Trusty + Sinbad
@@ -42,7 +42,7 @@ class RosterCheck(commands.Cog):
                 tcreds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    'C:/Users/Luke Vaughan/Desktop/RosterCheck/credentials.json', SCOPES)
+                    'C:/Users/Luke Vaughan/Desktop/My Cogs/RosterCheck/credentials.json', SCOPES)
                 tcreds = flow.run_local_server()
             # Save the credentials for the next run
             with open('token.pickle', 'wb') as token:
@@ -139,6 +139,31 @@ class RosterCheck(commands.Cog):
             if message == "":
                 message = "No role inconsistencies found"
             await ctx.send(message[:1990])
+
+    @commands.command()
+    @commands.has_role("Officer")
+    async def roleless(self, ctx):
+        """Prints how many users have no roles on the server!"""
+        count = 0
+        for user in ctx.guild.members:
+            if len(user.roles) == 1:
+                count += 1
+        await ctx.send("There are " + str(count) + " members with no roles")
+
+    @commands.command()
+    @commands.has_role("Officer")
+    async def addroleless(self, ctx):
+        """Adds Roleless role to people with no roles"""
+        rolelessRole = ctx.guild.get_role(671005795999023144)
+        count = 0
+        async with ctx.typing():
+            for user in ctx.guild.members:
+                if len(user.roles) == 1:
+                    count += 1
+                    await user.add_roles(rolelessRole)
+        await ctx.send("Added Roleless role to " + str(count) + " members")
+
+
 
 
     @commands.command()
@@ -606,7 +631,7 @@ class RosterCheck(commands.Cog):
             print()
 
             for member in esorole.members:
-                if str(member) not in rosterMembers:
+                if str(member) not in rosterMembers and str(member) not in roleExempt:
                     print("removed from", str(member))
                     removed.append(str(member))
                     await member.remove_roles(esorole)
