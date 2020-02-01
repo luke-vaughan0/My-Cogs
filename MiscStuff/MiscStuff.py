@@ -275,6 +275,19 @@ class MiscStuff(commands.Cog):
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
+    async def clearuser(self, ctx, member: discord.Member, limit: int):
+        """Deletes all messages from a user"""
+        messages = await ctx.channel.history(limit=limit).flatten()
+        messagesToDelete = []
+        for message in messages:
+            if message.author == member:
+                messagesToDelete.append(message)
+        await ctx.channel.delete_messages(messagesToDelete)
+
+
+
+    @commands.command()
+    @commands.has_permissions(manage_messages=True)
     async def clearbetween(self, ctx, start: discord.Message, end: discord.Message):
         """Deletes all messages between two messages"""
         print("Working")
@@ -487,6 +500,65 @@ class MiscStuff(commands.Cog):
             await end.delete()
             await ctx.delete()
         await warning.delete()
+
+    @commands.command()
+    async def minesweepers(self, ctx, size: int = 10, mines: int = 8):
+        """Generates a minesweepers board"""
+
+        board = [["" for x in range(size)] for y in range(size)]
+        emotes = {"M": ":bomb:", "": ":bomb:",
+                  0: ":zero:", 1: ":one:", 2: ":two:",
+                  3: ":three:", 4: ":four:", 5: ":five:",
+                  6: ":six:", 7: ":seven:", 8: ":eight:", 9: ":nine:"}
+        message = ""
+
+        if mines > size*size:
+            await ctx.send("There's not enough room for that many mines")
+        elif size >= 14:
+            await ctx.send("There's not enough room for that big of a board")
+        else:
+            for i in range(0, mines):
+                posx = random.randint(0, size - 1)
+                posy = random.randint(0, size - 1)
+                while board[posx][posy] == "M":
+                    posx = random.randint(0, size - 1)
+                    posy = random.randint(0, size - 1)
+                board[posx][posy] = "M"
+
+            checkBoard = [["" for x in range(size+2)] for y in range(size+2)]
+            for x in range(0, size):
+                for y in range(0, size):
+                    checkBoard[x+1][y+1] = board[x][y]
+
+            for x in range(1, size+1):
+                for y in range(1, size+1):
+                    if checkBoard[x][y] != "M":
+                        count = 0
+                        if checkBoard[x-1][y-1] == "M":
+                            count += 1
+                        if checkBoard[x][y-1] == "M":
+                            count += 1
+                        if checkBoard[x+1][y-1] == "M":
+                            count += 1
+                        if checkBoard[x-1][y] == "M":
+                            count += 1
+                        if checkBoard[x+1][y] == "M":
+                            count += 1
+                        if checkBoard[x-1][y+1] == "M":
+                            count += 1
+                        if checkBoard[x][y+1] == "M":
+                            count += 1
+                        if checkBoard[x+1][y+1] == "M":
+                            count += 1
+                        board[x-1][y-1] = count
+
+
+            for i in board:
+                for j in i:
+                    message = message + "||" + emotes[j] + "||"
+                message = message + "\n"
+            await ctx.send(message)
+
 
 
 
