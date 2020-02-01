@@ -163,6 +163,18 @@ class RosterCheck(commands.Cog):
                     await user.add_roles(rolelessRole)
         await ctx.send("Added Roleless role to " + str(count) + " members")
 
+    @commands.command()
+    @commands.has_role("Officer")
+    async def kickroleless(self, ctx):
+        """Kicks everyone with a roleless role"""
+        rolelessRole = ctx.guild.get_role(671005795999023144)
+        count = 0
+        async with ctx.typing():
+            for member in rolelessRole.members:
+                await member.kick(reason="Roleless")
+                count += 1
+        await ctx.send("Kicked " + str(count) + " members")
+
 
 
 
