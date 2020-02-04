@@ -68,13 +68,12 @@ class RosterCheck(commands.Cog):
 
     @commands.command()
     @commands.has_role("Officer")
-    async def update(self, ctx):
+    async def updateroles(self, ctx):
         """This does stuff!"""
-        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H30"
-        await ctx.send("I can do stuff!")
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
 
-        ranks = {"7": "Wanderer", "5": "Adventurer", "4": "Honoraria", "3": "Journeyman",
-                 "2": "Leadership", "1": "Guildmaster"}
+        adventurer = ctx.guild.get_role(434100306893209610) # 6
+        wanderer = ctx.guild.get_role(290170879302696961) # 7
 
         creds = await self.config.creds()
 
@@ -86,29 +85,71 @@ class RosterCheck(commands.Cog):
                                     range=SAMPLE_RANGE_NAME).execute()
         values = result.get('values', [])
 
+        #if not values:
+        #    print('No data found.')
+        #else:
+        #    for row in values:
+        #       if row[3] != "":
+         #           member = ctx.guild.get_member_named(row[3])
+        #            if row[2] == "7" and wanderer not in member.roles:
+         #               member.add_roles(wanderer)
+         #               if adventurer in member.roles:
+         #                   member.remove_roles(adventurer)
+         #           elif row[2] == "6" and adventurer not in member.roles:
+         #               member.add_roles(adventurer)
+         #               if wanderer in member.roles:
+        #                    member.remove_roles(wanderer)
+                        
+          #  await ctx.send(message)
+
+    @commands.command()
+    @commands.has_role("Officer")
+    async def wrongroles(self, ctx):
+        """This does stuff!"""
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
+
+        adventurer = ctx.guild.get_role(434100306893209610)  # 6
+        wanderer = ctx.guild.get_role(290170879302696961)  # 7
+
+        creds = await self.config.creds()
+
+        service = build('sheets', 'v4', credentials=creds)
+
+        # Call the Sheets API
+        sheet = service.spreadsheets()
+        result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+                                    range=SAMPLE_RANGE_NAME).execute()
+        values = result.get('values', [])
+
         if not values:
             print('No data found.')
         else:
-            message = ""
-            for row in values:
-                if row[3] != "":
-                    member = ctx.guild.get_member_named(row[3])
-                    message = message+ranks[row[1]]+" "
-                    message = message+str(member)+" "
-                    if str(member) != "None":
-                        message = message+member.mention+" "
-                        message = message + str(member.id)+"\n"
-                    else:
-                        message = message+"\n"
-                        
-            await ctx.send(message)
-
+            promoted = ""
+            ingame = ""
+            async with ctx.typing():
+                for row in values:
+                    if row[3] != "":
+                        member = ctx.guild.get_member_named(row[3])
+                        if str(member) != "None":
+                            if wanderer in member.roles and row[1] != "7":
+                                if row[1] == "6":
+                                    await member.remove_roles(wanderer)
+                                    await member.add_roles(adventurer)
+                                    promoted += "\nPromoted " + member.name + " to Adventurer"
+                            elif adventurer in member.roles and row[1] != "6":
+                                ingame += "\n" + row[2] + " should be Adventurer"
+                if promoted == "":
+                    promoted = "No discord promotions"
+                if ingame == "":
+                    ingame = "No ingame promotions"
+            await ctx.send(promoted)
+            await ctx.send(ingame)
 
     @commands.command()
     @commands.has_role("Officer")
     async def rolecheck(self, ctx):
         """This does stuff!"""
-        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         await ctx.send("I can do stuff!")
 
         ranks = {"7": "Wanderer", "5": "Adventurer", "4": "Honoraria", "3": "Journeyman",
@@ -182,7 +223,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def updatefromname(self, ctx):
         """This does stuff!"""
-        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
 
         creds = await self.config.creds()
 
@@ -233,7 +274,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def updatefromid(self, ctx):
         """This does stuff!"""
-        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
 
         creds = await self.config.creds()
 
@@ -283,7 +324,7 @@ class RosterCheck(commands.Cog):
     @commands.command()
     async def lookup(self, ctx, *message):
         """This does stuff!"""
-        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         # Your code will go here
         creds = await self.config.creds()
         temp = ""
@@ -319,7 +360,7 @@ class RosterCheck(commands.Cog):
 
     @commands.command()
     async def lookupdiscord(self, ctx, *message):
-        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         """This does stuff!"""
         # Your code will go here
         creds = await self.config.creds()
@@ -357,7 +398,7 @@ class RosterCheck(commands.Cog):
     @commands.command()
     @commands.has_role("Officer")
     async def notondiscord(self, ctx):
-        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         """This does stuff!"""
         # Your code will go here
         creds = await self.config.creds()
@@ -406,7 +447,7 @@ class RosterCheck(commands.Cog):
     @commands.command()
     @commands.has_role("Officer")
     async def estimatenames(self, ctx):
-        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         """This does stuff!"""
         # Your code will go here
         creds = await self.config.creds()
@@ -466,9 +507,9 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def addtoroster(self, ctx, ingameName, discordName, rank="7"):
         """Adds a user to the roster"""
-        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         creds = await self.config.creds()
-        ranks = {"wanderer": "7", "adventurer": "5", "honoraria": "4", "officer": "3",
+        ranks = {"wanderer": "7", "adventurer": "6", "honoraria": "4", "officer": "3",
                  "leadership": "2", "guildmaster": "1"}
 
         service = build('sheets', 'v4', credentials=creds)
@@ -502,7 +543,7 @@ class RosterCheck(commands.Cog):
 
             error = False
             special = False
-            if not rank.isdigit() or rank not in ["7", "5", "4", "3", "2", "1"]:
+            if not rank.isdigit() or rank not in ["7", "6", "4", "3", "2", "1"]:
                 try:
                     rank = ranks[rank.lower()]
                 except KeyError:
@@ -526,19 +567,24 @@ class RosterCheck(commands.Cog):
                         await ctx.send("No response given")
                         error = True
                     else:
-                        special = True
-                        pos = ingameOnRoster.index(str(ingameName)) + 3
-                        range_name = "'Guild Roster'!D" + str(pos) + ":F" + str(pos)
+                        if str(discordMember) != "None":
+                            special = True
+                            pos = ingameOnRoster.index(str(ingameName)) + 3
+                            range_name = "'Guild Roster'!D" + str(pos) + ":G" + str(pos)
 
-                        values = [[str(discordMember), str(discordMember.id), discordMember.joined_at.strftime("%d/%m/%y")]]
+                            values = [[str(discordMember), str(discordMember.id), discordMember.joined_at.strftime("%d/%m/%y"), time.strftime("%d/%m/%y")]]
 
-                        body = {
-                            'values': values
-                        }
-                        result = service.spreadsheets().values().update(
-                            spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_name,
-                            valueInputOption="RAW", body=body).execute()
-                        await ctx.send("User added")
+                            body = {
+                                'values': values
+                            }
+                            result = service.spreadsheets().values().update(
+                                spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_name,
+                                valueInputOption="RAW", body=body).execute()
+                            await ctx.send("User added")
+                        else:
+                            await ctx.send("This Discord user could not be found")
+                            error = True
+
 
 
                 else:
@@ -553,13 +599,14 @@ class RosterCheck(commands.Cog):
                 userform[0].append(str(discordMember))
                 userform[0].append(str(discordMember.id))
                 userform[0].append(discordMember.joined_at.strftime("%d/%m/%y"))
+                userform[0].append(time.strftime("%d/%m/%y"))
             else:
                 await ctx.send("This Discord user could not be found")
                 error = True
 
             if not special:
                 if not error:
-                    range_name = "'Guild Roster'!A" + str(count) + ":F" + str(count)
+                    range_name = "'Guild Roster'!A" + str(count) + ":G" + str(count)
 
                     values = userform
 
@@ -572,6 +619,7 @@ class RosterCheck(commands.Cog):
                     await ctx.send("User added")
                 else:
                     await ctx.send("The user was not added")
+        pass
 
 
 
@@ -609,7 +657,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def esorole(self, ctx):
         """This does stuff!"""
-        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         # Your code will go here
         esorole = ctx.guild.get_role(356874800502931457)
         creds = await self.config.creds()
@@ -671,7 +719,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def addjoindates(self, ctx):
         """This does stuff!"""
-        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         # Your code will go here
         creds = await self.config.creds()
         await ctx.send("I can do stuff!")
@@ -733,7 +781,7 @@ class RosterCheck(commands.Cog):
                     print("Will check in an hour for roster")
                     await asyncio.sleep(3600)
 
-                    SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+                    SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
                     creds = await self.config.creds()
 
                     service = build('sheets', 'v4', credentials=creds)
@@ -801,7 +849,7 @@ class RosterCheck(commands.Cog):
         elif esoRole in member.roles:
             message = message + "They were an ESO " + member.top_role.name
 
-            SAMPLE_RANGE_NAME = "'Guild Roster'!A3:H"
+            SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
             creds = await self.config.creds()
 
             service = build('sheets', 'v4', credentials=creds)
