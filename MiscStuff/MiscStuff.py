@@ -143,6 +143,23 @@ class MiscStuff(commands.Cog):
 
         await ctx.send(message)
 
+    @commands.command()
+    @commands.has_permissions(manage_roles=True)
+    async def pingrole(self, ctx, role: discord.Role, duration: int = 120):
+        """Turns on role pings for this role for the entered time"""
+        if duration > 300:
+            duration = 300
+        if role.mentionable:
+            await ctx.send("This role is already mentionable")
+        else:
+            await role.edit(mentionable=True)
+            await ctx.send(role.name + " is now mentionable for " + str(duration) + " seconds")
+            await asyncio.sleep(duration)
+            await role.edit(mentionable=False)
+            await ctx.send(role.name + " is no longer mentionable")
+
+
+
 
     @commands.command()
     async def alert(self, ctx, *message):
@@ -466,7 +483,7 @@ class MiscStuff(commands.Cog):
             else:
                 message = message + quote[0]
 
-            message = message + " 20" + quote[2][-2:] + "\n"
+            message = message + ", 20" + quote[2][-2:] + "\n"
 
             if len(message) > 1800:
                 long = True
