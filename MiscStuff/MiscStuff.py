@@ -144,7 +144,7 @@ class MiscStuff(commands.Cog):
         await ctx.send(message)
 
     @commands.command()
-    @commands.has_permissions(manage_roles=True)
+    @commands.has_role("Officer")
     async def pingrole(self, ctx, role: discord.Role, duration: int = 120):
         """Turns on role pings for this role for the entered time"""
         if duration > 300:
@@ -411,6 +411,11 @@ class MiscStuff(commands.Cog):
         else:
             await ctx.send("Couldn't find one of the messages to clear between")
 
+
+    @commands.command()
+    async def emoteid(self, ctx, emote: discord.Emoji):
+        """Returns an emote ID"""
+        await ctx.send(emote.id)
 
 
     @commands.command()
