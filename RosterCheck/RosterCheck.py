@@ -655,6 +655,37 @@ class RosterCheck(commands.Cog):
 
     @commands.command()
     @commands.has_role("Officer")
+    async def overduepromotion(self, ctx):
+        """This does stuff!"""
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
+        creds = await self.config.creds()
+        service = build('sheets', 'v4', credentials=creds)
+        # Call the Sheets API
+        sheet = service.spreadsheets()
+        result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+                                        range=SAMPLE_RANGE_NAME).execute()
+        values = result.get('values', [])
+
+        promotions = []
+
+        for row in values:
+            if row[6] != "":
+                if row[1] == "7" and int(row[7]) >= 90:
+                    promotions.append(row[2])
+
+        message = "Promotions needed: **" + str(len(promotions)) + "**\n"
+
+        for member in promotions:
+            if len(message) > 1990:
+                await ctx.send(message)
+                message = ""
+            message = message + member + "\n"
+        await ctx.send(message)
+
+
+
+    @commands.command()
+    @commands.has_role("Officer")
     async def esorole(self, ctx):
         """This does stuff!"""
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
