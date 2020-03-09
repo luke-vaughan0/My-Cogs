@@ -89,7 +89,7 @@ class PokeTRs(commands.Cog):
         for i in range(1, 7):
             nextwt = trs[i - 1][0] + 7
             if nextwt >= 50:
-                nextwt -= 49
+                nextwt -= 50
             trs.append([nextwt])
             trs[i].append(trs[i][0] + 24)
             trs[i].append(trs[i][0] + 42)
@@ -160,7 +160,7 @@ class PokeTRs(commands.Cog):
             for i in range(1, 7):
                 nextwt = trs[i - 1][0] + 7
                 if nextwt >= 50:
-                    nextwt -= 49
+                    nextwt -= 50
                 trs.append([nextwt])
                 trs[i].append(trs[i][0] + 24)
                 trs[i].append(trs[i][0] + 42)
