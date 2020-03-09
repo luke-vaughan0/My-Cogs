@@ -83,7 +83,6 @@ class MiscStuff(commands.Cog):
             else:
                 horoscope += response.text[response.text.find('</strong> - ') + 12:response.text.find("</p>")]
             await ctx.send(horoscope)
-
         except:
             print(horoscope)
             horoscope = "Hmm, having some problems with the crystal balls, try again later"
@@ -92,35 +91,33 @@ class MiscStuff(commands.Cog):
 
 
     @commands.command()
-    async def oldest(self, ctx, role=None):
+    async def oldest(self, ctx, role: discord.Role = None):
         """Lists the oldest users with an optional role"""
-        print(role)
-        roleID = 0
-        for item in ctx.guild.roles:
-            if item.name.lower() == role.lower():
-                roleID = item
+        joinDates = []
 
-        if roleID != 0 and role is not None:
-            joinDates = []
-            for user in ctx.guild.members:
-                if role is None:
-                    if user.top_role.name != "Community Member":
-                        joinDates.append([user.joined_at, str(user)])
-                else:
-                    if roleID in user.roles:
-                        joinDates.append([user.joined_at, str(user)])
-
-            joinDates.sort()
-            if len(joinDates) > 10:
-                message = "The 10 oldest users with roles are:\n"
-                for i in range(0, 10):
-                    message += joinDates[i][1] + ", " + str(joinDates[i][0].date()) + "\n"
+        for user in ctx.guild.members:
+            if not role:
+                joinDates.append([user.joined_at, str(user)])
             else:
-                message = "The oldest users with roles are:\n"
-                for i in range(0, len(joinDates)):
-                    message += joinDates[i][1] + ", " + str(joinDates[i][0].date()) + "\n"
+                if role in user.roles:
+                    joinDates.append([user.joined_at, str(user)])
+
+        joinDates.sort()
+        if len(joinDates) > 10:
+            if role:
+                message = "The 10 oldest users with roles are:\n"
+            else:
+                message = "The 10 oldest users are:\n"
+            for i in range(0, 10):
+                message += joinDates[i][1] + ", " + str(joinDates[i][0].date()) + "\n"
         else:
-            message = "Couldn't find that role"
+            if role:
+                message = "The oldest users with roles are:\n"
+            else:
+                message = "The oldest users are:\n"
+            for i in range(0, len(joinDates)):
+                message += joinDates[i][1] + ", " + str(joinDates[i][0].date()) + "\n"
+
 
         await ctx.send(message)
 
@@ -411,11 +408,77 @@ class MiscStuff(commands.Cog):
         else:
             await ctx.send("Couldn't find one of the messages to clear between")
 
+    @commands.command()
+    @commands.has_permissions(manage_messages=True)
+    async def reallyslowclearbetween(self, ctx, start: discord.Message, end: discord.Message):
+        """Deletes all messages between two messages, really slowly"""
+        print("Working")
+        messages = await ctx.channel.history(limit=5000).flatten()
+        messagesToDelete = []
+        if start.created_at < end.created_at:
+            temp = start
+            start = copy.copy(end)
+            end = copy.copy(temp)
+        foundStart = False
+        foundEnd = False
+        for message in messages:
+            if not foundStart:
+                if message.id == start.id:
+                    foundStart = True
+                    print("gottem")
+            else:
+                if message.id == end.id:
+                    foundEnd = True
+                    print("gottem")
+                    break
+                else:
+                    messagesToDelete.append(message)
+        print("still working")
+        if foundEnd:
+            warning = await ctx.send("Are you sure you want to delete " + str(
+                len(messagesToDelete)) + " messages between `" + start.content[:10] + "` and " + end.content[
+                                                                                                 :10] + "`?\nType Y to accept")
+
+            def check(m):
+                return m.content == 'Y' and m.channel == ctx.channel
+
+            try:
+                reply = await self.bot.wait_for('message', timeout=10.0, check=check)
+            except asyncio.TimeoutError:
+                errorMessage = await ctx.send("You didn't respond fast enough")
+                await asyncio.sleep(3)
+                await warning.delete()
+                await ctx.message.delete()
+                await errorMessage.delete()
+            else:
+                await reply.delete()
+                await warning.delete()
+                await ctx.message.delete()
+                if len(messagesToDelete) > 5000:
+                    errorMessage = await ctx.send("Sorry, that's too many messages to slow delete")
+                    await asyncio.sleep(3)
+                    await errorMessage.delete()
+                else:
+                    for message in messagesToDelete:
+                        await message.delete()
+
+
+        else:
+            await ctx.send("Couldn't find one of the messages to clear between")
+
 
     @commands.command()
     async def emoteid(self, ctx, emote: discord.Emoji):
         """Returns an emote ID"""
         await ctx.send(emote.id)
+
+    @commands.command()
+    @commands.is_owner()
+    async def say(self, ctx, message, channel: discord.TextChannel = None):
+        """Says something in the channel"""
+        if not channel:
+            channel = ctx.channel
+        await channel.send(message)
 
 
     @commands.command()
@@ -483,8 +546,11 @@ class MiscStuff(commands.Cog):
             if type(quote[0]) == int:
                 try:
                     message = message + ctx.guild.get_member(quote[0]).nick
-                except TypeError:
-                    message = message + self.bot.get_user(quote[0]).name
+                except (TypeError, AttributeError) as e:
+                    if self.bot.get_user(quote[0]):
+                        message = message + self.bot.get_user(quote[0]).name
+                    else:
+                        message = message + "anonymous"
             else:
                 message = message + quote[0]
 
