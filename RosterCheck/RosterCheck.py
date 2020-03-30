@@ -459,11 +459,11 @@ class RosterCheck(commands.Cog):
 
     @commands.command()
     @commands.has_role("Officer")
-    async def addtoroster(self, ctx, ingameName, discordName, rank="7"):
+    async def addtoroster(self, ctx, ingameName, discordName, rank="9"):
         """Adds a user to the roster"""
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         creds = await self.config.creds()
-        ranks = {"wanderer": "7", "adventurer": "6", "honoraria": "4", "officer": "3",
+        ranks = {"scout": "9", "wanderer": "8", "adventurer": "7", "honoraria": "4", "officer": "3",
                  "leadership": "2", "guildmaster": "1"}
 
         service = build('sheets', 'v4', credentials=creds)
@@ -497,7 +497,7 @@ class RosterCheck(commands.Cog):
 
             error = False
             special = False
-            if not rank.isdigit() or rank not in ["7", "6", "4", "3", "2", "1"]:
+            if not rank.isdigit() or rank not in ["9", "8", "7", "4", "3", "2", "1"]:
                 try:
                     rank = ranks[rank.lower()]
                 except KeyError:
@@ -575,7 +575,10 @@ class RosterCheck(commands.Cog):
                 result = service.spreadsheets().values().update(
                     spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_name,
                     valueInputOption="RAW", body=body).execute()
-                await ctx.send("User added")
+                if result.get('updatedCells') == 0:
+                    await ctx.send("No data was entered, please check the sheet (or ping luke or sodan)")
+                else:
+                    await ctx.send("User added")
             else:
                 await ctx.send("The user was not added")
         pass
@@ -626,6 +629,7 @@ class RosterCheck(commands.Cog):
                             await ctx.invoke(self.bot.get_command("addtoroster"), member[0], str(member[1]))
                     elif reply.content.upper() == "N":
                         await ctx.send("ok I won't")
+                await ctx.send("Done")
 
         else:
             await ctx.send("Input is invalid, make sure you put \"\" around names with spaces")
