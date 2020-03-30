@@ -662,6 +662,24 @@ class RosterCheck(commands.Cog):
 
     @commands.command()
     @commands.has_role("Officer")
+    async def replacerole(self, ctx, oldrole: discord.Role, newrole: discord.Role, *members):
+        """Toggles ESO role on and off for notifications"""
+        async with ctx.typing():
+            for imember in members:
+                member = ctx.guild.get_member_named(imember)
+                if member:
+                    if oldrole in member.roles:
+                        await member.remove_roles(oldrole)
+                    if newrole not in member.roles:
+                        await member.add_roles(newrole)
+                else:
+                    await ctx.send("Member not found: " + str(imember))
+        await ctx.send("Updated " + str(len(members)) + " members")
+
+
+
+    @commands.command()
+    @commands.has_role("Officer")
     async def overduepromotion(self, ctx):
         """Lists users that need promotions."""
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
@@ -750,7 +768,7 @@ class RosterCheck(commands.Cog):
         message = "Users to be added to the roster: " + str(len(removed)) + "\n"
 
         for member in removed:
-            if len(message) > 1990:
+            if len(message) > 1900:
                 await ctx.send(message)
                 message = ""
             message = message + member[0] + " - " + member[1] + "\n"
