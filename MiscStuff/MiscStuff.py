@@ -248,7 +248,6 @@ class MiscStuff(commands.Cog):
         await ctx.send("Removed " + str(reactsRemoved) + " reactions")
 
 
-
     @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def clearupto(self, ctx, clearPoint: discord.Message):
