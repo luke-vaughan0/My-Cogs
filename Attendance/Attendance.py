@@ -48,15 +48,18 @@ class Attendance(commands.Cog):
                 for member in Member_Array:
                     await ctx.send(member)
                     cell = wks.find(member)
-                    col = cell.col
-                    row = cell.row
-                    AC = wks.cell(row, 10)
-                    #print(wks.cell(row,4))
-                    ACV = int (AC.value)
-                    #print(ACV)
-                    ACV = ACV+1
-                    #print(ACV)
-                    wks.update_cell(AC.row, AC.col, ACV)
-                    d1 = time.strftime("%d/%m/%Y")
-                    #print(wks.cell(row, 11))
-                    wks.update_cell(AC.row, 11, d1)
+                    if cell != "":
+                        col = cell.col
+                        row = cell.row
+                        AC = wks.cell(row, 10)
+                        #print(wks.cell(row,4))
+                        ACV = int(AC.value)
+                        #print(ACV)
+                        ACV = ACV+1
+                        #print(ACV)
+                        wks.update_cell(AC.row, AC.col, ACV)
+                        d1 = time.strftime("%d/%m/%Y")
+                        #print(wks.cell(row, 11))
+                        wks.update_cell(AC.row, 11, d1)
+                    else:
+                        await ctx.send(str(member) + " could not be found on the roster")
