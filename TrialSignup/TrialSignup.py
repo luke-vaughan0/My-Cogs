@@ -17,23 +17,29 @@ class TrialSignup(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        default_guild = {
+        default_channel = {
             "trialInfo": []
         }
 
+        default_global = {
+            "trialChannels": []
+        }
+
         self.config = Config.get_conf(self, identifier=6457)
-        self.config.register_guild(**default_guild)
+        self.config.register_channel(**default_channel)
+        self.config.register_global(**default_global)
 
 
     @commands.command()
     @commands.has_role("Officer")
     async def trial(self, ctx, tankNum: int, healNum: int, ddNum: int, description: str = "Created a trial:"):
         """Creates a trial"""
-        trialInfo = await self.config.trialInfo()
+        trialInfo = await self.config.channel(ctx.channel).trialInfo()
+        if not trialInfo:
+            trialInfo = [0]
         if trialInfo[0] != 0:
             await ctx.send("You must end the current trial before creating a new one!")
         else:
-            trialChannel = ctx.guild.get_channel(675461735968276506)
             trialInfo = [0, ddNum, healNum, tankNum, [], [], []]
             trialMessage = [description+"\n",
                             "DD (" + str(len(trialInfo[4])) + "/" + str(trialInfo[1]) + "): \n",
@@ -42,27 +48,38 @@ class TrialSignup(commands.Cog):
             signupMessage = await ctx.send(trialMessage[0] + trialMessage[3] + trialMessage[2] + trialMessage[1])
             trialInfo[0] = signupMessage.id
             trialInfo.append(trialMessage)
-            await self.config.trialInfo.set(trialInfo)
+
+            channels = await self.config.trialChannels()
+            channels.append(ctx.channel.id)
+            await self.config.trialChannels.set(channels)
+
+            await self.config.channel(ctx.channel).trialInfo.set(trialInfo)
 
 
     @commands.command()
     @commands.has_role("Officer")
-    async def endtrial(self, ctx):
+    async def endtrial(self, ctx, channel: discord.TextChannel = None):
         """Ends current trial"""
+        if not channel:
+            channel = ctx.channel
         trialInfo = [0, 1, 1, 1, [], [], []]
-        await ctx.send("Current trial ended")
-        await self.config.trialInfo.set(trialInfo)
+        channels = await self.config.trialChannels()
+        channels.remove(channel.id)
+        await ctx.send("Trial in <#" + str(channel.id) + "> ended")
+        await self.config.channel(channel).trialInfo.set(trialInfo)
+        await self.config.trialChannels.set(channels)
 
 
     @commands.command()
     @commands.has_role("Officer")
-    async def addsignup(self, ctx, user: discord.Member, role):
+    async def addsignup(self, ctx, user: discord.Member, role, trialChannel: discord.TextChannel = None):
         """Adds a user to the trial"""
+        if not trialChannel:
+            trialChannel = ctx.channel
         dd = ["dd", "dps", "damage"]
         heal = ["heal", "healer"]
         tank = ["tank"]
-        trialChannel = self.bot.get_guild(285175143104380928).get_channel(675461735968276506)
-        trialInfo = await self.config.trialInfo()
+        trialInfo = await self.config.channel(trialChannel).trialInfo()
         if role in dd:
             if user.id in trialInfo[4] or user.id in trialInfo[5] or user.id in trialInfo[6]:
                 await ctx.send(user.name + " is already signed up!")
@@ -86,7 +103,7 @@ class TrialSignup(commands.Cog):
                     if not found:
                         await ctx.send("No trial currently running")
 
-                    await self.config.trialInfo.set(trialInfo)
+                    await self.config.channel(trialChannel).trialInfo.set(trialInfo)
 
 
         if role in heal:
@@ -112,7 +129,7 @@ class TrialSignup(commands.Cog):
                     if not found:
                         await ctx.send("No trial currently running")
 
-                    await self.config.trialInfo.set(trialInfo)
+                    await self.config.channel(trialChannel).trialInfo.set(trialInfo)
 
 
         if role in tank:
@@ -138,17 +155,18 @@ class TrialSignup(commands.Cog):
                     if not found:
                         await ctx.send("No trial currently running")
 
-                    await self.config.trialInfo.set(trialInfo)
+                    await self.config.channel(trialChannel).trialInfo.set(trialInfo)
 
     @commands.command()
     @commands.has_role("Officer")
-    async def removesignup(self, ctx, user: discord.Member, role):
+    async def removesignup(self, ctx, user: discord.Member, role, trialChannel: discord.TextChannel = None):
         """Removes a user from the trial"""
+        if not trialChannel:
+            trialChannel = ctx.channel
         dd = ["dd", "dps", "damage"]
         heal = ["heal", "healer"]
         tank = ["tank"]
-        trialChannel = self.bot.get_guild(285175143104380928).get_channel(675461735968276506)
-        trialInfo = await self.config.trialInfo()
+        trialInfo = await self.config.channel(trialChannel).trialInfo()
 
         if role in dd:
             if user.id in trialInfo[4]:
@@ -167,7 +185,7 @@ class TrialSignup(commands.Cog):
                             content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
                 if not found:
                     await ctx.send("No trial currently running")
-                await self.config.trialInfo.set(trialInfo)
+                await self.config.channel(trialChannel).trialInfo.set(trialInfo)
             else:
                 await ctx.send(user.name + " wasn't signed up!")
 
@@ -190,7 +208,7 @@ class TrialSignup(commands.Cog):
                             content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
                 if not found:
                     await ctx.send("No trial currently running")
-                await self.config.trialInfo.set(trialInfo)
+                await self.config.channel(trialChannel).trialInfo.set(trialInfo)
             else:
                 await ctx.send(user.name + " wasn't signed up!")
 
@@ -213,7 +231,7 @@ class TrialSignup(commands.Cog):
                             content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
                 if not found:
                     await ctx.send("No trial currently running")
-                await self.config.trialInfo.set(trialInfo)
+                await self.config.channel(trialChannel).trialInfo.set(trialInfo)
             else:
                 await ctx.send(user.name + " wasn't signed up!")
 
@@ -230,7 +248,8 @@ class TrialSignup(commands.Cog):
     @listener()
     async def on_message(self, message):
         """stuff"""
-        if message.channel.id == 675461735968276506 and message.author.id != 582583001838518285 and message.content[0] in ["+", "-"]:
+        channels = await self.config.trialChannels()
+        if message.channel.id in channels and message.author.id != 582583001838518285 and message.content[0] in ["+", "-"]:
             dd = ["+dd", "+dps", "+damage"]
             heal = ["+heal", "+healer"]
             tank = ["+tank"]
@@ -238,7 +257,7 @@ class TrialSignup(commands.Cog):
 
             for code in dd:
                 if code in message.content.replace(" ", "").lower():
-                    trialInfo = await self.config.trialInfo()
+                    trialInfo = await self.config.channel(message.channel).trialInfo()
                     if message.author.id in trialInfo[4] or message.author.id in trialInfo[5] or message.author.id in trialInfo[6]:
                         await message.channel.send(message.author.mention + " you're already signed up!")
                     else:
@@ -258,7 +277,7 @@ class TrialSignup(commands.Cog):
                                     newRow = newRow[:-2] + "\n"
                                     trialInfo[7][1] = newRow
                                     await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
-                                    await self.config.trialInfo.set(trialInfo)
+                                    await self.config.channel(message.channel).trialInfo.set(trialInfo)
                                     await asyncio.sleep(5)
                                     await response.delete()
                             if not found:
@@ -269,7 +288,7 @@ class TrialSignup(commands.Cog):
 
             for code in heal:
                 if code in message.content.replace(" ", "").lower():
-                    trialInfo = await self.config.trialInfo()
+                    trialInfo = await self.config.channel(message.channel).trialInfo()
                     if message.author.id in trialInfo[4] or message.author.id in trialInfo[5] or message.author.id in trialInfo[6]:
                         await message.channel.send(message.author.mention + " you're already signed up!")
                     else:
@@ -289,7 +308,7 @@ class TrialSignup(commands.Cog):
                                     newRow = newRow[:-2] + "\n"
                                     trialInfo[7][2] = newRow
                                     await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
-                                    await self.config.trialInfo.set(trialInfo)
+                                    await self.config.channel(message.channel).trialInfo.set(trialInfo)
                                     await asyncio.sleep(5)
                                     await response.delete()
                             if not found:
@@ -299,7 +318,7 @@ class TrialSignup(commands.Cog):
 
             for code in tank:
                 if code in message.content.replace(" ", "").lower():
-                    trialInfo = await self.config.trialInfo()
+                    trialInfo = await self.config.channel(message.channel).trialInfo()
                     if message.author.id in trialInfo[4] or message.author.id in trialInfo[5] or message.author.id in trialInfo[6]:
                         await message.channel.send(message.author.mention + " you're already signed up!")
                     else:
@@ -319,7 +338,7 @@ class TrialSignup(commands.Cog):
                                     newRow = newRow[:-2] + "\n"
                                     trialInfo[7][3] = newRow
                                     await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
-                                    await self.config.trialInfo.set(trialInfo)
+                                    await self.config.channel(message.channel).trialInfo.set(trialInfo)
                                     await asyncio.sleep(5)
                                     await response.delete()
                             if not found:
@@ -333,7 +352,7 @@ class TrialSignup(commands.Cog):
 
             for code in dd:
                 if code in message.content.replace(" ", "").lower():
-                    trialInfo = await self.config.trialInfo()
+                    trialInfo = await self.config.channel(message.channel).trialInfo()
                     if message.author.id in trialInfo[4]:
                         found = False
                         async for channelMessage in message.channel.history():
@@ -349,7 +368,7 @@ class TrialSignup(commands.Cog):
                                 await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
                         if not found:
                             await message.channel.send(message.author.mention + " No trial currently running")
-                        await self.config.trialInfo.set(trialInfo)
+                        await self.config.channel(message.channel).trialInfo.set(trialInfo)
                     else:
                         await message.channel.send(message.author.mention + " You weren't signed up!")
 
@@ -357,7 +376,7 @@ class TrialSignup(commands.Cog):
 
             for code in heal:
                 if code in message.content.replace(" ", "").lower():
-                    trialInfo = await self.config.trialInfo()
+                    trialInfo = await self.config.channel(message.channel).trialInfo()
                     if message.author.id in trialInfo[5]:
                         found = False
                         async for channelMessage in message.channel.history():
@@ -373,7 +392,7 @@ class TrialSignup(commands.Cog):
                                 await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
                         if not found:
                             await message.channel.send(message.author.mention + " No trial currently running")
-                        await self.config.trialInfo.set(trialInfo)
+                        await self.config.channel(message.channel).trialInfo.set(trialInfo)
                     else:
                         await message.channel.send(message.author.mention + " You weren't signed up!")
 
@@ -381,7 +400,7 @@ class TrialSignup(commands.Cog):
 
             for code in tank:
                 if code in message.content.replace(" ", "").lower():
-                    trialInfo = await self.config.trialInfo()
+                    trialInfo = await self.config.channel(message.channel).trialInfo()
                     if message.author.id in trialInfo[6]:
                         found = False
                         async for channelMessage in message.channel.history():
@@ -397,7 +416,7 @@ class TrialSignup(commands.Cog):
                                 await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
                         if not found:
                             await message.channel.send(message.author.mention + " No trial currently running")
-                        await self.config.trialInfo.set(trialInfo)
+                        await self.config.channel(message.channel).trialInfo.set(trialInfo)
                     else:
                         await message.channel.send(message.author.mention + " You weren't signed up!")
 
