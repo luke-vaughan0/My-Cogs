@@ -51,7 +51,6 @@ class Attendance(commands.Cog):
                 for member in Member_Array:
                     await ctx.send(member)
                     cell = wks.find(member)
-                    cell = ""  # debug
                     if cell != "":
                         col = cell.col
                         row = cell.row
