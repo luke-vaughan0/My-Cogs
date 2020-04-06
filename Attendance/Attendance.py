@@ -4,6 +4,7 @@ from redbot.core import commands
 import discord
 import gspread
 import time
+import typing
 from oauth2client.service_account import ServiceAccountCredentials
 
 
@@ -13,9 +14,11 @@ class Attendance(commands.Cog):
 
 
     @commands.command()
-    async def LogEvent(self, ctx, *guests: discord.Member):
-        """Incremements members in the event channel's event score, minus guests"""
-        vch = ctx.guild.get_channel(360785714339643392)
+    async def LogEvent(self, ctx, channel: typing.Optional[discord.VoiceChannel], *guests: discord.Member):
+        """Increments members in the event channel's event score, minus guests"""
+        if not channel:
+            channel = ctx.guild.get_channel(360785714339643392)
+        vch = channel
         Guest_Arr = []
         error = False
         for member in guests:
@@ -48,6 +51,7 @@ class Attendance(commands.Cog):
                 for member in Member_Array:
                     await ctx.send(member)
                     cell = wks.find(member)
+                    cell = ""  # debug
                     if cell != "":
                         col = cell.col
                         row = cell.row
