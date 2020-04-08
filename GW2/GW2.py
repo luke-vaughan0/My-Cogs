@@ -45,6 +45,10 @@ Hard = [
 def PrintPaths(ctx, SelectList, amount):
     PrintList = []
     seed()
+    if amount > 6:
+        amount = 6
+    if amount < 1:
+        amount = 1
     for x in range(amount):
         PrintList.append(SelectList.pop(randint(0, len(SelectList)-1)))
 
