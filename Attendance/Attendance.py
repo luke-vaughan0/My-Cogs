@@ -50,13 +50,19 @@ class Attendance(commands.Cog):
                 wks = gc.open("GoA Guild Roster").sheet1
                 for member in Member_Array:
                     await ctx.send(member)
-                    cell = wks.find(member)
-                    if cell != "":
+                    try:
+                        cell = wks.find(member)
+                    except gspread.exceptions.CellNotFound:
+                        await ctx.send(str(member) + " could not be found on the roster")
+                        continue
+                    if cell != "" and cell.col == 4:
                         col = cell.col
                         row = cell.row
                         AC = wks.cell(row, 10)
-                        #print(wks.cell(row,4))
-                        ACV = int(AC.value)
+                        if AC.value == "":
+                            ACV = 0
+                        else:
+                            ACV = int(AC.value)
                         #print(ACV)
                         ACV = ACV+1
                         #print(ACV)
