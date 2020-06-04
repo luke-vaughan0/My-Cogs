@@ -24,6 +24,13 @@ if listener is None:
         return lambda x: x
 
 
+def shorthash(string):
+    value = 0
+    for letter in string:
+        value += ord(letter)
+    return value
+
+
 class RosterCheck(commands.Cog):
     """Manages the GoA roster"""
 
@@ -66,12 +73,49 @@ class RosterCheck(commands.Cog):
         self.config.register_global(
             roleExempt=roleFile
         )
+        # self.config.register_channel(**default_channel)
 
 
     @commands.command()
     @commands.has_role("Officer")
     async def wrongroles(self, ctx):
         """Lists incorrect roles"""
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
+
+        roles = {"9": "Scout", "8": "Wanderer", "7": "Adventurer", "5": "Honoraria", "4": "Officer", "3": "Senior Officer", "2": "Community Leadership"}
+
+
+        creds = await self.config.creds()
+
+        service = build('sheets', 'v4', credentials=creds)
+
+        # Call the Sheets API
+        sheet = service.spreadsheets()
+        result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+                                    range=SAMPLE_RANGE_NAME).execute()
+        values = result.get('values', [])
+
+        message = ""
+        if not values:
+            print('No data found.')
+        else:
+            for row in values:
+                if row[4] == "" or row[1] in ["5", "1"]:
+                    continue
+                member = ctx.guild.get_member(int(row[4]))
+                role = roles[row[1]]
+                if member:
+                    if member.top_role.name != role:
+                        message += str(member) + " is " + member.top_role.name + ", but " + role + " on roster\n"
+        if message == "":
+            message = "No wrong roles"
+        await ctx.send(message)
+
+
+    @commands.command()
+    @commands.has_role("Officer")
+    async def correctroles(self, ctx):
+        """Corrects incorrect roles"""
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
 
         adventurer = ctx.guild.get_role(434100306893209610)  # 6
@@ -290,6 +334,37 @@ class RosterCheck(commands.Cog):
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         creds = await self.config.creds()
 
+        async with ctx.typing():
+            service = build('sheets', 'v4', credentials=creds)
+
+            # Call the Sheets API
+            sheet = service.spreadsheets()
+            result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+                                        range=SAMPLE_RANGE_NAME).execute()
+            values = result.get('values', [])
+
+        if not values:
+            print('No data found.')
+        else:
+            for row in values:
+                if row[3] == str(user):
+                    embed = discord.Embed(description=user.mention)
+                    embed.add_field(name="Ingame name", value=row[2])
+                    embed.add_field(name="Join date", value=user.joined_at.date())
+                    await ctx.send(content="Ingame name is " + row[2], embed=embed)
+                    return
+
+
+            await ctx.send("No roster entry found for that discord name")
+
+
+    @commands.command()
+    @commands.has_role("Officer")
+    async def generatecode(self, ctx, user: discord.Member, dps, siroria, valid):
+        """Finds an ingame name from a discord name"""
+        SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
+        creds = await self.config.creds()
+
         service = build('sheets', 'v4', credentials=creds)
 
         # Call the Sheets API
@@ -300,15 +375,33 @@ class RosterCheck(commands.Cog):
 
         if not values:
             print('No data found.')
+            return
         else:
-            message = ""
+            name = ""
             for row in values:
                 if row[3] == str(user):
-                    message = "Ingame name is @"+str(row[2])
+                    name = str(row[2])
 
-            if message == "":
-                message = "Ingame name not found"
-            await ctx.send(message)
+            if name == "":
+                await ctx.send("No roster entry found for that discord name")
+                return
+        namehash = shorthash(name)
+        code = int(dps+siroria+valid)*namehash
+        await ctx.send(code)
+
+
+    @commands.command()
+    @commands.has_role("Officer")
+    async def checkcode(self, ctx, ingamename, code: int):
+        """Finds an ingame name from a discord name"""
+        namehash = shorthash(ingamename)
+        info = code/namehash
+        if info.is_integer():
+            info = str(info)[:-2]
+            await ctx.send("DPS: " + info[:-2].replace("-","") + "\tSiroria/Relequen: " + info[-2:-1] + "\tValid: " + info[-1])
+        else:
+            await ctx.send("This code is invalid")
+
 
 
 
@@ -338,11 +431,21 @@ class RosterCheck(commands.Cog):
             else:
                 message = ""
                 for row in values:
-                    if row[2] == str(nameToCheck):
-                        message = "Discord name is "+str(row[3])
+                    if row[2].lower() == str(nameToCheck).lower():
+                        if row[3] != "":
+                            member = ctx.guild.get_member_named(row[3])
+                            if not member:
+                                await ctx.send("This user has left discord, their name was " + row[3])
+                                return
+                            embed = discord.Embed(description=member.mention)
+                            embed.add_field(name="Ingame name", value=row[2])
+                            embed.add_field(name="Join date", value=member.joined_at.date())
+                            await ctx.send(content="Discord name is "+str(member), embed=embed)
+                            return
+                        else:
+                            await ctx.send("No discord name registered for that ingame name")
 
-                if message == "":
-                    message = "Discord name not found"
+                message = "No roster entry found for that ingame name"
                 await ctx.send(message)
         else:
             await ctx.send("Enter a name to lookup")
@@ -459,7 +562,7 @@ class RosterCheck(commands.Cog):
 
     @commands.command()
     @commands.has_role("Officer")
-    async def addtoroster(self, ctx, ingameName, discordName, rank="9"):
+    async def addtoroster(self, ctx, ingameName, discordName: discord.Member, rank="9"):
         """Adds a user to the roster"""
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         creds = await self.config.creds()
@@ -478,20 +581,19 @@ class RosterCheck(commands.Cog):
 
             ingameOnRoster = []
             discordOnRoster = []
+            roster = []
             userform = [[time.strftime("%d/%m/%y %X")]]
 
-            if discordName.isdigit():
-                discordMember = ctx.guild.get_member(int(discordName))
-            else:
-                discordMember = ctx.guild.get_member_named(discordName)
+            discordMember = discordName
 
             if not values:
                 print('No data found.')
             else:
-                for count, row in enumerate(values,3):
+                for count, row in enumerate(values, 3):
                     if row[2] == "":
                         break
                 for row in values:
+                    roster.append([row[2], row[3]])
                     ingameOnRoster.append(row[2])
                     discordOnRoster.append(row[3])
 
@@ -508,47 +610,51 @@ class RosterCheck(commands.Cog):
             if ingameName.find("#") != -1:
                 await ctx.send("This ingame name is not valid")
                 error = True
-            if str(ingameName).lower() in (name.lower() for name in ingameOnRoster):
-                try:
-                    if discordOnRoster[ingameOnRoster.index(str(ingameName))] == "":
-                        await ctx.send("This ingame name is on the roster, would you like to add a discord name only?\nType Y to accept")
+            for pos, row in enumerate(roster, 3):
+                if str(ingameName).lower() == row[0].lower():
+                    try:
+                        if row[1] == "":
+                            await ctx.send("This ingame name is on the roster, would you like to add a discord name only?\nType Y to accept")
 
-                        def check(m):
-                            return m.content == 'Y' and m.channel == ctx.channel
+                            def check(m):
+                                return (m.content == 'Y' or m.content == "y") and m.channel == ctx.channel
 
-                        try:
-                            reply = await self.bot.wait_for('message', timeout=10.0, check=check)
-                        except asyncio.TimeoutError:
-                            await ctx.send("No response given")
-                            error = True
-                        else:
-                            if str(discordMember) != "None":
-                                special = True
-                                pos = ingameOnRoster.index(str(ingameName)) + 3
-                                range_name = "'Guild Roster'!D" + str(pos) + ":G" + str(pos)
-
-                                values = [[str(discordMember), str(discordMember.id), discordMember.joined_at.strftime("%d/%m/%y"), time.strftime("%d/%m/%y")]]
-
-                                body = {
-                                    'values': values
-                                }
-                                result = service.spreadsheets().values().update(
-                                    spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_name,
-                                    valueInputOption="RAW", body=body).execute()
-                                await ctx.send("User added")
-                            else:
-                                await ctx.send("This Discord user could not be found")
+                            try:
+                                reply = await self.bot.wait_for('message', timeout=10.0, check=check)
+                            except asyncio.TimeoutError:
+                                await ctx.send("No response given")
                                 error = True
+                            else:
+                                if str(discordMember) != "None":
+                                    if str(discordMember) in discordOnRoster:
+                                        await ctx.send("This discord name is a duplicate")
+                                        error = True
+                                    else:
+                                        special = True
+                                        range_name = "'Guild Roster'!D" + str(pos) + ":G" + str(pos)
+
+                                        values = [[str(discordMember), str(discordMember.id), discordMember.joined_at.strftime("%d/%m/%y"), time.strftime("%d/%m/%y")]]
+
+                                        body = {
+                                            'values': values
+                                        }
+                                        result = service.spreadsheets().values().update(
+                                            spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_name,
+                                            valueInputOption="RAW", body=body).execute()
+                                        await ctx.send("User added")
+                                else:
+                                    await ctx.send("This Discord user could not be found")
+                                    error = True
 
 
-                    else:
+                        else:
+                            await ctx.send("This ingame name is a duplicate")
+                            error = True
+
+                    except ValueError:
                         await ctx.send("This ingame name is a duplicate")
                         error = True
-
-                except ValueError:
-                    await ctx.send("This ingame name is a duplicate")
-                    error = True
-                    pass
+                        pass
             userform[0].append(ingameName)
 
             if str(discordMember) != "None":
@@ -963,6 +1069,15 @@ class RosterCheck(commands.Cog):
                                                      str(message.channel.id) + "/" + \
                                                      str(message.id)
                             await botChannel.send(messageToSend)
+
+    @listener()
+    async def on_member_join(self, member):
+        if str(member.guild.get_member(159985870458322944).status) == "offline":
+            await member.guild.get_channel(425707351874469908).send("Welcome " + member.mention + " to the Guild of Adventure **[EU]** Discord!\n\n"
+                                                                                                  "Please take a look at the #rules-and-information channel and then let us know __below this message:__\n"
+                                                                                                  ":small_orange_diamond: the **game** you are joining (our guild spans multiple games)\n"
+                                                                                                  ":small_orange_diamond: your **account name** in that game\n"
+                                                                                                  "After this, an officer will open the **rest of our channels** and invite you\n")
 
     @listener()
     async def on_member_remove(self, member):
