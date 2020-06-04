@@ -38,12 +38,14 @@ class MiscStuff(commands.Cog):
         
 
     @commands.command()
-    async def joindate(self, ctx):
-        """Prints the date you joined this server"""
+    async def joindate(self, ctx, user: discord.Member = None):
+        """Prints the date you or a user joined this server"""
+        if not user:
+            user = ctx.author
 
-        joinDate = ctx.author.joined_at.date()
+        joinDate = user.joined_at.date()
 
-        await ctx.send(str(joinDate))
+        await ctx.send("Join date for " + user.name + " is " + str(joinDate))
 
     @commands.command()
     async def horoscope(self, ctx):
@@ -141,7 +143,7 @@ class MiscStuff(commands.Cog):
         await ctx.send(message)
 
     @commands.command()
-    @commands.has_role("Officer")
+    @commands.has_any_role("Officer", "Pinger")
     async def pingrole(self, ctx, role: discord.Role, duration: int = 120):
         """Turns on role pings for this role for the entered time"""
         if duration > 300:
@@ -685,6 +687,8 @@ class MiscStuff(commands.Cog):
                         break
                     except AttributeError:
                         pass
+                    except discord.errors.Forbidden:
+                        print("Couldn't send alert to", str(userToDM))
 
     @listener()
     async def on_reaction_add(self, reaction, user):
