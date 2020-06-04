@@ -53,6 +53,8 @@ class vote(commands.Cog):
 
     @listener()
     async def on_message(self, message):
+        if not message.guild:
+            return
         channels = await self.config.guild(message.guild).voting()
         if channels:
             if message.channel.id in channels:
@@ -61,6 +63,8 @@ class vote(commands.Cog):
 
     @listener()
     async def on_reaction_add(self, reaction, user):
+        if not reaction.message.guild:
+            return
         channels = await self.config.guild(reaction.message.guild).voting()
         if channels:
             if reaction.message.channel.id in channels:
