@@ -13,9 +13,6 @@ import time
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 
-# The ID and range of a sample spreadsheet.
-SAMPLE_SPREADSHEET_ID = '1qnOH3VU71Iim3KdgdZeUVyqfLa6EpcVe3kgIdQc84n8'
-
 
 listener = getattr(commands.Cog, "listener", None)  # Trusty + Sinbad
 if listener is None:
@@ -68,18 +65,27 @@ class RosterCheck(commands.Cog):
                 
         self.config = Config.get_conf(self, identifier=6457)
         self.config.register_global(
-            creds=tcreds
+            creds=tcreds,
+            sheetid=""
         )
         self.config.register_global(
             roleExempt=roleFile
         )
         # self.config.register_channel(**default_channel)
 
+    @commands.command()
+    @commands.has_role("Officer")
+    async def setrosterid(self, ctx, sheetid):
+        old = await self.config.sheetid()
+        await self.config.sheetid.set(sheetid)
+        await ctx.send("Old ID: " + old + "\nNew ID: " + sheetid)
+
 
     @commands.command()
     @commands.has_role("Officer")
     async def wrongroles(self, ctx):
         """Lists incorrect roles"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
 
         roles = {"9": "Scout", "8": "Wanderer", "7": "Adventurer", "5": "Honoraria", "4": "Officer", "3": "Senior Officer", "2": "Community Leadership"}
@@ -116,6 +122,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def correctroles(self, ctx):
         """Corrects incorrect roles"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
 
         adventurer = ctx.guild.get_role(434100306893209610)  # 6
@@ -198,6 +205,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def updatefromname(self, ctx):
         """Adds user IDs to users without one"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
 
         creds = await self.config.creds()
@@ -249,6 +257,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def updatefromid(self, ctx):
         """Updates discord username from their id"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
 
         creds = await self.config.creds()
@@ -331,6 +340,7 @@ class RosterCheck(commands.Cog):
     @commands.command()
     async def lookup(self, ctx, user: discord.Member):
         """Finds an ingame name from a discord name"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         creds = await self.config.creds()
 
@@ -362,6 +372,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def generatecode(self, ctx, user: discord.Member, dps, siroria, valid):
         """Finds an ingame name from a discord name"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         creds = await self.config.creds()
 
@@ -408,6 +419,7 @@ class RosterCheck(commands.Cog):
     @commands.command()
     async def lookupdiscord(self, ctx, *message):
         """Finds a discord name from an ingame name"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         creds = await self.config.creds()
         temp = ""
@@ -455,6 +467,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def notondiscord(self, ctx):
         """Lists users not on discord"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         # Your code will go here
         creds = await self.config.creds()
@@ -505,6 +518,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def estimatenames(self, ctx):
         """Adds names of users who have the same ESO and discord names"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         # Your code will go here
         creds = await self.config.creds()
@@ -564,6 +578,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def addtoroster(self, ctx, ingameName, discordName: discord.Member, rank="9"):
         """Adds a user to the roster"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         creds = await self.config.creds()
         ranks = {"scout": "9", "wanderer": "8", "adventurer": "7", "honoraria": "4", "officer": "3",
@@ -792,6 +807,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def overduepromotion(self, ctx):
         """Lists users that need promotions."""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         creds = await self.config.creds()
         service = build('sheets', 'v4', credentials=creds)
@@ -821,6 +837,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def checkroster(self, ctx):
         """Lists users who haven't been added to the roster"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
 
         esorole = ctx.guild.get_role(356874800502931457)
@@ -890,6 +907,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def esorole(self, ctx):
         """Adds and removes the ESO role to match the roster"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         # Your code will go here
         esorole = ctx.guild.get_role(356874800502931457)
@@ -952,6 +970,7 @@ class RosterCheck(commands.Cog):
     @commands.has_role("Officer")
     async def addjoindates(self, ctx):
         """Adds join dates to users without one on the roster"""
+        SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
         SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
         # Your code will go here
         creds = await self.config.creds()
@@ -1010,6 +1029,7 @@ class RosterCheck(commands.Cog):
             roleChange = list(set(after.roles) - set(before.roles))
             if roleChange:
                 if roleChange[0].name == "ESO":
+                    SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
                     print("ESO role added to", after)
                     print("Will check in an hour for roster")
                     await asyncio.sleep(3600)
@@ -1089,6 +1109,7 @@ class RosterCheck(commands.Cog):
         if len(member.roles) == 1:
             message = message + "They had no roles"
         elif esoRole in member.roles:
+            SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
             message = message + "They were an ESO " + member.top_role.name
 
             SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
