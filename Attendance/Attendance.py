@@ -14,6 +14,7 @@ class Attendance(commands.Cog):
 
 
     @commands.command()
+    @commands.has_role("Officer")
     async def LogEvent(self, ctx, channel: typing.Optional[discord.VoiceChannel], *guests: discord.Member):
         """Increments members in the event channel's event score, minus guests"""
         if not channel:
@@ -62,7 +63,7 @@ class Attendance(commands.Cog):
                         if AC.value == "":
                             ACV = 0
                         else:
-                            ACV = int(AC.value)
+                            ACV = float(AC.value)
                         #print(ACV)
                         ACV = ACV+1
                         #print(ACV)
