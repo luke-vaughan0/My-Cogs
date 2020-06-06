@@ -41,6 +41,10 @@ class RosterCheck(commands.Cog):
         if os.path.exists('token.pickle'):
             with open('token.pickle', 'rb') as token:
                 tcreds = pickle.load(token)
+        else:
+            os.chdir("/home/ubuntu")
+            with open('token.pickle', 'rb') as token:
+                tcreds = pickle.load(token)
         # If there are no (valid) credentials available, let the user log in.
         if not tcreds or not tcreds.valid:
             if tcreds and tcreds.expired and tcreds.refresh_token:
