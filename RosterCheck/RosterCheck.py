@@ -1096,12 +1096,11 @@ class RosterCheck(commands.Cog):
 
     @listener()
     async def on_member_join(self, member):
-        if str(member.guild.get_member(159985870458322944).status) == "offline":
-            await member.guild.get_channel(425707351874469908).send("Welcome " + member.mention + " to the Guild of Adventure **[EU]** Discord!\n\n"
-                                                                                                  "Please take a look at the #rules-and-information channel and then let us know __below this message:__\n"
-                                                                                                  ":small_orange_diamond: the **game** you are joining (our guild spans multiple games)\n"
-                                                                                                  ":small_orange_diamond: your **account name** in that game\n"
-                                                                                                  "After this, an officer will open the **rest of our channels** and invite you\n")
+        await member.guild.get_channel(425707351874469908).send("Welcome " + member.mention + " to the Guild of Adventure **[EU]** Discord!\n\n"
+                                                                                                "Please take a look at the #rules-and-information channel and then let us know __below this message:__\n"
+                                                                                                ":small_orange_diamond: the **game** you are joining (our guild spans multiple games)\n"
+                                                                                                ":small_orange_diamond: your **account name** in that game\n"
+                                                                                                "After this, an officer will open the **rest of our channels** and invite you\n")
 
     @listener()
     async def on_member_remove(self, member):
