@@ -751,7 +751,7 @@ class RosterCheck(commands.Cog):
                     if reply.content.upper() == "Y":
                         for member in updatelist:
                             await ctx.send("Running for " + member[0])
-                            await ctx.invoke(self.bot.get_command("addtoroster"), member[0], str(member[1]))
+                            await ctx.invoke(self.bot.get_command("addtoroster"), member[0], member[1])
                     elif reply.content.upper() == "N":
                         await ctx.send("ok I won't")
                 await ctx.send("Done")
