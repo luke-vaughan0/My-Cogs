@@ -648,6 +648,32 @@ class MiscStuff(commands.Cog):
                 message = message + "\n"
             await ctx.send(message)
 
+    @commands.command()
+    async def emojify(self, ctx, *message):
+        others = {"0": "zero", "1": "one", "2": "two", "3": "three", "4": "four", "5": "five", "6": "six", "7": "seven",
+                  "8": "eight", "9": "nine", "#": "hash", "*": "asterisk", "+": "heavy_plus_sign",
+                  "-": "heavy_minus_sign", "/": "heavy_division_sign", "$": "heavy_dollar_sign"}
+        message = " ".join(message)
+        eMessage = ""
+        for letter in message:
+            if len(eMessage) > 1950:
+                break
+            if letter.lower() in ["a", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
+                                  "s", "t", "u", "v", "w", "x", "y", "z"]:
+                eMessage = eMessage + " :regional_indicator_" + letter.lower() + ":"
+            elif letter.lower() == "b":
+                eMessage = eMessage + " :b:"
+            elif letter == " ":
+                eMessage = eMessage + "  "
+            elif letter == "!":
+                eMessage = eMessage + ":exclamation:"
+            elif letter == "?":
+                eMessage = eMessage + ":question:"
+            elif letter in others:
+                eMessage = eMessage + " :" + others[letter] + ":"
+        if eMessage == "":
+            eMessage = "No proper characters were found"
+        await ctx.send(eMessage)
 
 
 
