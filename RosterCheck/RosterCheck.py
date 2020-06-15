@@ -102,7 +102,7 @@ class RosterCheck(commands.Cog):
             if len(message) > 1970:
                 await ctx.send(message)
                 message = ""
-            message = message + "\n" + member.name
+            message = message + "\n" + str(member)
         await ctx.send(message)
 
 
