@@ -70,7 +70,8 @@ class RosterCheck(commands.Cog):
         self.config = Config.get_conf(self, identifier=6457)
         self.config.register_global(
             creds=tcreds,
-            sheetid=""
+            sheetid="",
+            trialsheetid=""
         )
         self.config.register_global(
             roleExempt=roleFile
@@ -83,6 +84,90 @@ class RosterCheck(commands.Cog):
         old = await self.config.sheetid()
         await self.config.sheetid.set(sheetid)
         await ctx.send("Old ID: " + old + "\nNew ID: " + sheetid)
+
+
+    @commands.command()
+    @commands.has_role("Officer")
+    async def settrialsheetid(self, ctx, sheetid):
+        old = await self.config.trialsheetid()
+        await self.config.trialsheetid.set(sheetid)
+        await ctx.send("Old ID: " + old + "\nNew ID: " + sheetid)
+
+
+    @commands.command()
+    @commands.has_role("Officer")
+    async def listrole(self, ctx, role:discord.Role):
+        message = "Membesr with " + role.name + ":"
+        for member in role.members:
+            if len(message) > 1970:
+                await ctx.send(message)
+                message = ""
+            message = "\n" + member.name
+        await ctx.send(message)
+
+
+    @commands.command()
+    @commands.has_role("Officer")
+    async def setvgoat(self, ctx):
+        """Sets people to the correct vgoat roles"""
+        SAMPLE_SPREADSHEET_ID = await self.config.trialsheetid()
+        SAMPLE_RANGE_NAME = "'Vet Trial Roster'!B17:AC"
+        return
+
+        esorole = ctx.guild.get_role(356874800502931457)
+        creds = await self.config.creds()
+        rosterMembers = []
+
+        with open("RoleExempt.txt", "r") as f:
+            roleExempt = f.read().splitlines()
+
+        service = build('sheets', 'v4', credentials=creds)
+        async with ctx.typing():
+
+            # Call the Sheets API
+            sheet = service.spreadsheets()
+            result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
+                                        range=SAMPLE_RANGE_NAME).execute()
+            values = result.get('values', [])
+            added = []
+            removed = []
+
+            for row in values:
+                if row[3] != "" and str(ctx.guild.get_member_named(row[3])) != "None":
+                    rosterMembers.append(row[3])
+
+            for name in rosterMembers:
+                member = ctx.guild.get_member_named(name)
+                if esorole not in member.roles and str(member) not in roleExempt:
+                    print("added to", member)
+                    added.append(str(member))
+                    await member.add_roles(esorole)
+            print()
+
+            for member in esorole.members:
+                if str(member) not in rosterMembers and str(member) not in roleExempt:
+                    print("removed from", str(member))
+                    removed.append(str(member))
+                    await member.remove_roles(esorole)
+
+        message = "Roles added: " + str(len(added)) + "\n"
+        for member in added:
+            if len(message) > 1990:
+                await ctx.send(message)
+                message = ""
+            message = message + member + "\n"
+        await ctx.send(message)
+
+        message = "Roles removed: " + str(len(removed)) + "\n"
+
+        for member in removed:
+            if len(message) > 1990:
+                await ctx.send(message)
+                message = ""
+            message = message + member + "\n"
+
+        await ctx.send(message[:1990])
+        await ctx.send("Roles updated")
 
 
     @commands.command()
