@@ -96,13 +96,13 @@ class RosterCheck(commands.Cog):
 
     @commands.command()
     @commands.has_role("Officer")
-    async def listrole(self, ctx, role:discord.Role):
-        message = "Membesr with " + role.name + ":"
+    async def listrole(self, ctx, role: discord.Role):
+        message = "Members with " + role.name + ":"
         for member in role.members:
             if len(message) > 1970:
                 await ctx.send(message)
                 message = ""
-            message = "\n" + member.name
+            message = message + "\n" + member.name
         await ctx.send(message)
 
 
@@ -112,14 +112,13 @@ class RosterCheck(commands.Cog):
         """Sets people to the correct vgoat roles"""
         SAMPLE_SPREADSHEET_ID = await self.config.trialsheetid()
         SAMPLE_RANGE_NAME = "'Vet Trial Roster'!B17:AC"
-        return
 
-        esorole = ctx.guild.get_role(356874800502931457)
+        trainee = ctx.guild.get_role(675480762925187084)
+        expert = ctx.guild.get_role(675480949827567635)
+        master = ctx.guild.get_role(675481067012227072)
+
         creds = await self.config.creds()
-        rosterMembers = []
-
-        with open("RoleExempt.txt", "r") as f:
-            roleExempt = f.read().splitlines()
+        vgoatMembers = []
 
         service = build('sheets', 'v4', credentials=creds)
         async with ctx.typing():
@@ -132,25 +131,34 @@ class RosterCheck(commands.Cog):
             added = []
             removed = []
 
-            for row in values:
-                if row[3] != "" and str(ctx.guild.get_member_named(row[3])) != "None":
-                    rosterMembers.append(row[3])
+            for i in range(0, len(values), 7):
+                row = values[i]
+                if row == []:
+                    break
+                name = row[0].strip("@").split(" ", 1)[0]
+                if str(ctx.guild.get_member_named(name)) != "None":
+                    #if values[i+1][0] != "":
+                    #print(values[i+2])
+                    vgoatMembers.append([ctx.guild.get_member_named(name).name, values[i+2][1]])
 
-            for name in rosterMembers:
-                member = ctx.guild.get_member_named(name)
-                if esorole not in member.roles and str(member) not in roleExempt:
+            print(vgoatMembers)
+
+
+            for item in vgoatMembers:
+                member = ctx.guild.get_member_named(item[0])
+                if trainee not in member.roles:
                     print("added to", member)
                     added.append(str(member))
-                    await member.add_roles(esorole)
+                    #await member.add_roles(trainee)
             print()
 
-            for member in esorole.members:
-                if str(member) not in rosterMembers and str(member) not in roleExempt:
-                    print("removed from", str(member))
-                    removed.append(str(member))
-                    await member.remove_roles(esorole)
+            #for member in esorole.members:
+            #    if str(member) not in rosterMembers:
+            #        print("removed from", str(member))
+            #        removed.append(str(member))
+            #        await member.remove_roles(esorole)
 
-        message = "Roles added: " + str(len(added)) + "\n"
+        message = "Trainee Roles added: " + str(len(added)) + "\n"
         for member in added:
             if len(message) > 1990:
                 await ctx.send(message)
@@ -158,7 +166,7 @@ class RosterCheck(commands.Cog):
             message = message + member + "\n"
         await ctx.send(message)
 
-        message = "Roles removed: " + str(len(removed)) + "\n"
+        message = "Trainee Roles removed: " + str(len(removed)) + "\n"
 
         for member in removed:
             if len(message) > 1990:
@@ -167,6 +175,71 @@ class RosterCheck(commands.Cog):
             message = message + member + "\n"
 
         await ctx.send(message[:1990])
+
+        for item in vgoatMembers:
+            member = ctx.guild.get_member_named(item[0])
+            if expert not in member.roles and item[1] in ["vGoat Expert", "vGoat Master"]:
+                print("added to", member)
+                added.append(str(member))
+                #await member.add_roles(trainee)
+        print()
+
+        #for member in esorole.members:
+        #    if str(member) not in rosterMembers:
+        #        print("removed from", str(member))
+        #        removed.append(str(member))
+        #        await member.remove_roles(esorole)
+
+        message = "Expert Roles added: " + str(len(added)) + "\n"
+        for member in added:
+            if len(message) > 1990:
+                await ctx.send(message)
+                message = ""
+            message = message + member + "\n"
+        await ctx.send(message)
+
+        message = "Expert Roles removed: " + str(len(removed)) + "\n"
+
+        for member in removed:
+            if len(message) > 1990:
+                await ctx.send(message)
+                message = ""
+            message = message + member + "\n"
+
+        await ctx.send(message[:1990])
+
+        for item in vgoatMembers:
+            member = ctx.guild.get_member_named(item[0])
+            if master not in member.roles and item[1] == "vGoat Master":
+                print("added to", member)
+                added.append(str(member))
+                #await member.add_roles(trainee)
+        print()
+
+        #for member in esorole.members:
+        #    if str(member) not in rosterMembers:
+        #        print("removed from", str(member))
+        #        removed.append(str(member))
+        #        await member.remove_roles(esorole)
+
+        message = "Master Roles added: " + str(len(added)) + "\n"
+        for member in added:
+            if len(message) > 1990:
+                await ctx.send(message)
+                message = ""
+            message = message + member + "\n"
+        await ctx.send(message)
+
+        message = "Master Roles removed: " + str(len(removed)) + "\n"
+
+        for member in removed:
+            if len(message) > 1990:
+                await ctx.send(message)
+                message = ""
+            message = message + member + "\n"
+
+        await ctx.send(message[:1990])
+
         await ctx.send("Roles updated")
 
 
