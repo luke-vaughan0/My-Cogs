@@ -1266,11 +1266,16 @@ class RosterCheck(commands.Cog):
         esoRole = self.bot.get_guild(285175143104380928).get_role(356874800502931457)
         gw2Role = self.bot.get_guild(285175143104380928).get_role(356874876125970432)
         comRole = self.bot.get_guild(285175143104380928).get_role(304714006411739156)
+        embed = discord.Embed(title=str(member) + " has just left")
+        embed.add_field(name="Discord", value=member.mention)
+        embed.add_field(name="Join date", value=member.joined_at.date())
+        # embed.add_field(name="Member for", value=member.joined_at.date())
         message = str(member) + " (" + str(member.id) + ") has just left\n"
         if len(member.roles) == 1:
-            message = message + "They had no roles"
+            embed.add_field(name="Roles", value="No Roles")
         elif esoRole in member.roles:
             SAMPLE_SPREADSHEET_ID = await self.config.sheetid()
+            roleEmbed = "ESO " + member.top_role.name
             message = message + "They were an ESO " + member.top_role.name
 
             SAMPLE_RANGE_NAME = "'Guild Roster'!A3:I"
@@ -1294,18 +1299,21 @@ class RosterCheck(commands.Cog):
                     ign = row[2]
                     break
             if ign != "":
-                message = message + " with ingame name " + ign
+                embed.add_field(name="Ingame Name", value=ign)
             else:
-                message = message + " but an unknown ingame name"
+                embed.add_field(name="Ingame Name", value="Unknown")
             if gw2Role in member.roles:
-                message = message + "\nThey were a GW2 " + member.top_role.name
+                embed.insert_field_at(index=2, name="Roles", value=roleEmbed + "\nGW2 " + member.top_role.name)
+            else:
+                embed.insert_field_at(index=2, name="Roles", value="ESO " + member.top_role.name)
+
         elif gw2Role in member.roles:
-            message = message + "They were a GW2 " + member.top_role.name
-        elif comRole in member.roles:
-            message = message + "They were a community member"
+            embed.insert_field_at(index=2, name="Roles", value="GW2 " + member.top_role.name)
+        elif len(member.roles) == 3 and comRole in member.roles:
+            embed.insert_field_at(index=2, name="Roles", value="Community Member")
         else:
-            message = message + "They were a " + member.top_role.name
-        await leavers.send(message)
+            embed.insert_field_at(index=2, name="Roles", value=member.top_role.name)
+        await leavers.send(embed=embed)
         await asyncio.sleep(3)
         async for message in leavers.history(limit=3):
             if message.content.find(str(member)) == 2 and message.author.id == 159985870458322944:
