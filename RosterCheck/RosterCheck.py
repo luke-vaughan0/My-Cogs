@@ -1314,8 +1314,3 @@ class RosterCheck(commands.Cog):
         else:
             embed.insert_field_at(index=2, name="Roles", value=member.top_role.name)
         await leavers.send(embed=embed)
-        await asyncio.sleep(3)
-        async for message in leavers.history(limit=3):
-            if message.content.find(str(member)) == 2 and message.author.id == 159985870458322944:
-                await message.delete()
-                break
