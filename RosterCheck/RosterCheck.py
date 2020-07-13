@@ -1267,6 +1267,10 @@ class RosterCheck(commands.Cog):
         gw2Role = self.bot.get_guild(285175143104380928).get_role(356874876125970432)
         comRole = self.bot.get_guild(285175143104380928).get_role(304714006411739156)
         embed = discord.Embed(title=str(member) + " has just left")
+        try:
+            embed.set_thumbnail(url=str(member.avatar_url))
+        except:
+            pass
         embed.add_field(name="Discord", value=member.mention)
         embed.add_field(name="Join date", value=member.joined_at.date())
         # embed.add_field(name="Member for", value=member.joined_at.date())
