@@ -568,6 +568,12 @@ class MiscStuff(commands.Cog):
         await ctx.send(message)
 
     @commands.command()
+    async def randquote(self, ctx):
+        quoteList = await self.config.guild(ctx.guild).quotes()
+        print(quoteList[random.randint(0, len(quoteList)-1)])
+
+
+    @commands.command()
     @commands.is_owner()
     async def delquote(self, ctx, quoteToDel: int):
         quoteList = await self.config.guild(ctx.guild).quotes()
