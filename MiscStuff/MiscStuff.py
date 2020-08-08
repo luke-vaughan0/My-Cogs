@@ -586,9 +586,9 @@ class MiscStuff(commands.Cog):
                     name = "anonymous"
         else:
             name = quote[0]
-        embed = discord.Embed(title=str(name) + ", 20" + quote[2][-2:], description=quote[1])
+        embed = discord.Embed(description=quote[1])
         if url:
-            embed.set_author(url=url)
+            embed.set_author(name=str(name) + ", 20" + quote[2][-2:], url=url)
         await ctx.send(embed=embed)
 
 
