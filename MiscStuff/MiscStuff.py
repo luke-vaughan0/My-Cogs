@@ -570,7 +570,20 @@ class MiscStuff(commands.Cog):
     @commands.command()
     async def randquote(self, ctx):
         quoteList = await self.config.guild(ctx.guild).quotes()
-        print(quoteList[random.randint(0, len(quoteList)-1)])
+        quote = quoteList[random.randint(0, len(quoteList)-1)]
+        if type(quote[0]) == int:
+            try:
+                name = ctx.guild.get_member(quote[0]).nick
+            except (TypeError, AttributeError) as e:
+                if self.bot.get_user(quote[0]):
+                    name = self.bot.get_user(quote[0]).name
+                else:
+                    name = "anonymous"
+        else:
+            name = quote[0]
+        embed = discord.Embed(title=str(name) + ", 20" + quote[2][-2:], description=quote[1])
+        embed.set_author(name=str(name))
+        #embed.set_image()
 
 
     @commands.command()
