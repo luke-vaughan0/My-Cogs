@@ -571,19 +571,22 @@ class MiscStuff(commands.Cog):
     async def randquote(self, ctx):
         quoteList = await self.config.guild(ctx.guild).quotes()
         quote = quoteList[random.randint(0, len(quoteList)-1)]
+        url = None
         if type(quote[0]) == int:
             try:
-                name = ctx.guild.get_member(quote[0]).nick
+                name = ctx.guild.get_member(int(quote[0])).nick
+                url = ctx.guild.get_member(int(quote[0])).avatar_url
             except (TypeError, AttributeError) as e:
                 if self.bot.get_user(quote[0]):
-                    name = self.bot.get_user(quote[0]).name
+                    name = self.bot.get_user(int(quote[0])).name
+                    url = self.bot.get_user(int(quote[0])).avatar_url
                 else:
                     name = "anonymous"
         else:
             name = quote[0]
         embed = discord.Embed(title=str(name) + ", 20" + quote[2][-2:], description=quote[1])
-        embed.set_author(name=str(name))
-        #embed.set_image()
+        if url:
+            embed.set_image(url=url)
         await ctx.send(embed=embed)
 
 
