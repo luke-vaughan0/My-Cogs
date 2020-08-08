@@ -584,6 +584,7 @@ class MiscStuff(commands.Cog):
         embed = discord.Embed(title=str(name) + ", 20" + quote[2][-2:], description=quote[1])
         embed.set_author(name=str(name))
         #embed.set_image()
+        await ctx.send(embed=embed)
 
 
     @commands.command()
