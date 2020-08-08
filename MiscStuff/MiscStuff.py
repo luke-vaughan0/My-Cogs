@@ -575,6 +575,8 @@ class MiscStuff(commands.Cog):
         if type(quote[0]) == int:
             try:
                 name = ctx.guild.get_member(int(quote[0])).nick
+                if str(name) == "None":
+                    name = ctx.guild.get_member(int(quote[0])).name
                 url = ctx.guild.get_member(int(quote[0])).avatar_url
             except (TypeError, AttributeError) as e:
                 if self.bot.get_user(quote[0]):
@@ -586,7 +588,7 @@ class MiscStuff(commands.Cog):
             name = quote[0]
         embed = discord.Embed(title=str(name) + ", 20" + quote[2][-2:], description=quote[1])
         if url:
-            embed.set_image(url=url)
+            embed.set_author(url=url)
         await ctx.send(embed=embed)
 
 
