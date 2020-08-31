@@ -20,7 +20,7 @@ class Catjam(commands.Cog):
         if bpm > 1000:
             await ctx.send("That's a bit too fast!")
             return
-        await ctx.send(os.getcwd())
+        os.chdir("/home/ubuntu")
         async with ctx.typing():
             with mp.VideoFileClip("catjam.gif") as clip:
                 edited = clip.fx(mp.vfx.speedx, bpm / 123.417721519)
