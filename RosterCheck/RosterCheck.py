@@ -855,8 +855,8 @@ class RosterCheck(commands.Cog):
                 body = {
                     'values': values
                 }
-                service.spreadsheets().values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_name,)
-                result = service.spreadsheets().values().update(
+                #service.spreadsheets().values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_name)
+                result = service.spreadsheets().values().append(
                     spreadsheetId=SAMPLE_SPREADSHEET_ID, range=range_name,
                     valueInputOption="RAW", body=body).execute()
                 if result.get('updatedCells') == 0:
