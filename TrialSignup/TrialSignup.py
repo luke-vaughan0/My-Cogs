@@ -178,20 +178,18 @@ class TrialSignup(commands.Cog):
 
         if role in dd:
             if user.id in trialInfo[4]:
-                found = False
-                async for channelMessage in trialChannel.history():
-                    if channelMessage.id == trialInfo[0]:
-                        found = True
-                        await ctx.send(user.name + " has been unsigned")
-                        trialInfo[4].remove(user.id)
-                        newRow = "DD (" + str(len(trialInfo[4])) + "/" + str(trialInfo[1]) + "): "
-                        for users in trialInfo[4]:
-                            newRow += self.bot.get_user(users).mention + ", "
-                        newRow = newRow[:-2] + "\n"
-                        trialInfo[7][1] = newRow
-                        await channelMessage.edit(
-                            content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
-                if not found:
+                try:
+                    channelMessage = await trialChannel.fetch_message(trialInfo[0])
+                    await ctx.send(user.name + " has been unsigned")
+                    trialInfo[4].remove(user.id)
+                    newRow = "DD (" + str(len(trialInfo[4])) + "/" + str(trialInfo[1]) + "): "
+                    for users in trialInfo[4]:
+                        newRow += self.bot.get_user(users).mention + ", "
+                    newRow = newRow[:-2] + "\n"
+                    trialInfo[7][1] = newRow
+                    await channelMessage.edit(
+                        content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
+                except discord.NotFound:
                     await ctx.send("No trial currently running")
                 await self.config.channel(trialChannel).trialInfo.set(trialInfo)
             else:
@@ -257,28 +255,28 @@ class TrialSignup(commands.Cog):
     async def on_message(self, message):
         """stuff"""
         channels = await self.config.trialChannels()
+        if len(message.content) == 0:
+            return
         if message.channel.id in channels and message.author.id != 582583001838518285 and message.content[0] in ["+", "-"] and message.content.find("reserve") == -1:
             dd = ["+dd", "+dps", "+damage"]
             heal = ["+heal", "+healer"]
             tank = ["+tank"]
             reserve = ["+res", "+reserve"]
-
-            for code in dd:
-                if code in message.content.replace(" ", "").lower():
-                    while await self.config.inUse():
-                        await asyncio.sleep(1)
-                    await self.config.inUse.set(True)
-                    trialInfo = await self.config.channel(message.channel).trialInfo()
-                    if message.author.id in trialInfo[4] or message.author.id in trialInfo[5] or message.author.id in trialInfo[6]:
-                        await message.channel.send(message.author.mention + " you're already signed up!")
-                    else:
-                        if len(trialInfo[4]) >= trialInfo[1]:
-                            await message.channel.send(message.author.mention + " all DD spots are taken!")
+            try:
+                for code in dd:
+                    if code in message.content.replace(" ", "").lower():
+                        while await self.config.inUse():
+                            await asyncio.sleep(1)
+                        await self.config.inUse.set(True)
+                        trialInfo = await self.config.channel(message.channel).trialInfo()
+                        if message.author.id in trialInfo[4] or message.author.id in trialInfo[5] or message.author.id in trialInfo[6]:
+                            await message.channel.send(message.author.mention + " you're already signed up!")
                         else:
-                            found = False
-                            async for channelMessage in message.channel.history():
-                                if channelMessage.id == trialInfo[0]:
-                                    found = True
+                            if len(trialInfo[4]) >= trialInfo[1]:
+                                await message.channel.send(message.author.mention + " all DD spots are taken!")
+                            else:
+                                try:
+                                    channelMessage = await message.channel.fetch_message(trialInfo[0])
                                     response = await message.channel.send(message.author.mention + " You have been signed up as a dd")
                                     await message.add_reaction("👍")
                                     trialInfo[4].append(message.author.id)
@@ -291,160 +289,163 @@ class TrialSignup(commands.Cog):
                                     await self.config.channel(message.channel).trialInfo.set(trialInfo)
                                     await asyncio.sleep(5)
                                     await response.delete()
-                            if not found:
-                                await message.channel.send(message.author.mention + " No trial currently running")
+                                except discord.NotFound:
+                                    await message.channel.send(message.author.mention + " No trial currently running")
 
+                        break
 
-                    break
-
-            for code in heal:
-                if code in message.content.replace(" ", "").lower():
-                    while await self.config.inUse():
-                        await asyncio.sleep(1)
-                    await self.config.inUse.set(True)
-                    trialInfo = await self.config.channel(message.channel).trialInfo()
-                    if message.author.id in trialInfo[4] or message.author.id in trialInfo[5] or message.author.id in trialInfo[6]:
-                        await message.channel.send(message.author.mention + " you're already signed up!")
-                    else:
-                        if len(trialInfo[5]) >= trialInfo[2]:
-                            await message.channel.send(message.author.mention + " all healer spots are taken!")
+                for code in heal:
+                    if code in message.content.replace(" ", "").lower():
+                        while await self.config.inUse():
+                            await asyncio.sleep(1)
+                        await self.config.inUse.set(True)
+                        trialInfo = await self.config.channel(message.channel).trialInfo()
+                        if message.author.id in trialInfo[4] or message.author.id in trialInfo[5] or message.author.id in trialInfo[6]:
+                            await message.channel.send(message.author.mention + " you're already signed up!")
                         else:
+                            if len(trialInfo[5]) >= trialInfo[2]:
+                                await message.channel.send(message.author.mention + " all healer spots are taken!")
+                            else:
+                                found = False
+                                async for channelMessage in message.channel.history():
+                                    if channelMessage.id == trialInfo[0]:
+                                        found = True
+                                        response = await message.channel.send(message.author.mention + " You have been signed up as a healer")
+                                        await message.add_reaction("👍")
+                                        trialInfo[5].append(message.author.id)
+                                        newRow = "Heal (" + str(len(trialInfo[5])) + "/" + str(trialInfo[2]) + "): "
+                                        for user in trialInfo[5]:
+                                            newRow += self.bot.get_user(user).mention + ", "
+                                        newRow = newRow[:-2] + "\n"
+                                        trialInfo[7][2] = newRow
+                                        await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
+                                        await self.config.channel(message.channel).trialInfo.set(trialInfo)
+                                        await asyncio.sleep(5)
+                                        await response.delete()
+                                if not found:
+                                    await message.channel.send(message.author.mention + " No trial currently running")
+
+                        break
+
+                for code in tank:
+                    if code in message.content.replace(" ", "").lower():
+                        while await self.config.inUse():
+                            await asyncio.sleep(1)
+                        await self.config.inUse.set(True)
+                        trialInfo = await self.config.channel(message.channel).trialInfo()
+                        if message.author.id in trialInfo[4] or message.author.id in trialInfo[5] or message.author.id in trialInfo[6]:
+                            await message.channel.send(message.author.mention + " you're already signed up!")
+                        else:
+                            if len(trialInfo[6]) >= trialInfo[3]:
+                                await message.channel.send(message.author.mention + " all tank spots are taken!")
+                            else:
+                                found = False
+                                async for channelMessage in message.channel.history():
+                                    if channelMessage.id == trialInfo[0]:
+                                        found = True
+                                        response = await message.channel.send(message.author.mention + " You have been signed up as a tank")
+                                        await message.add_reaction("👍")
+                                        trialInfo[6].append(message.author.id)
+                                        newRow = "Tank (" + str(len(trialInfo[6])) + "/" + str(trialInfo[3]) + "): "
+                                        for user in trialInfo[6]:
+                                            newRow += self.bot.get_user(user).mention + ", "
+                                        newRow = newRow[:-2] + "\n"
+                                        trialInfo[7][3] = newRow
+                                        await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
+                                        await self.config.channel(message.channel).trialInfo.set(trialInfo)
+                                        await asyncio.sleep(5)
+                                        await response.delete()
+                                if not found:
+                                    await message.channel.send(message.author.mention + " No trial currently running")
+                        break
+
+                dd = ["-dd", "-dps", "-damage"]
+                heal = ["-heal", "-healer"]
+                tank = ["-tank"]
+                reserve = ["-res", "-reserve"]
+
+                for code in dd:
+                    if code in message.content.replace(" ", "").lower():
+                        while await self.config.inUse():
+                            await asyncio.sleep(1)
+                        await self.config.inUse.set(True)
+                        trialInfo = await self.config.channel(message.channel).trialInfo()
+                        if message.author.id in trialInfo[4]:
                             found = False
                             async for channelMessage in message.channel.history():
                                 if channelMessage.id == trialInfo[0]:
                                     found = True
-                                    response = await message.channel.send(message.author.mention + " You have been signed up as a healer")
-                                    await message.add_reaction("👍")
-                                    trialInfo[5].append(message.author.id)
+                                    await message.channel.send(message.author.mention + " You have been unsigned")
+                                    trialInfo[4].remove(message.author.id)
+                                    newRow = "DD (" + str(len(trialInfo[4])) + "/" + str(trialInfo[1]) + "): "
+                                    for user in trialInfo[4]:
+                                        newRow += self.bot.get_user(user).mention + ", "
+                                    newRow = newRow[:-2] + "\n"
+                                    trialInfo[7][1] = newRow
+                                    await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
+                            if not found:
+                                await message.channel.send(message.author.mention + " No trial currently running")
+                            await self.config.channel(message.channel).trialInfo.set(trialInfo)
+                        else:
+                            await message.channel.send(message.author.mention + " You weren't signed up!")
+
+                        break
+
+                for code in heal:
+                    if code in message.content.replace(" ", "").lower():
+                        while await self.config.inUse():
+                            await asyncio.sleep(1)
+                        await self.config.inUse.set(True)
+                        trialInfo = await self.config.channel(message.channel).trialInfo()
+                        if message.author.id in trialInfo[5]:
+                            found = False
+                            async for channelMessage in message.channel.history():
+                                if channelMessage.id == trialInfo[0]:
+                                    found = True
+                                    await message.channel.send(message.author.mention + " You have been unsigned")
+                                    trialInfo[5].remove(message.author.id)
                                     newRow = "Heal (" + str(len(trialInfo[5])) + "/" + str(trialInfo[2]) + "): "
                                     for user in trialInfo[5]:
                                         newRow += self.bot.get_user(user).mention + ", "
                                     newRow = newRow[:-2] + "\n"
                                     trialInfo[7][2] = newRow
                                     await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
-                                    await self.config.channel(message.channel).trialInfo.set(trialInfo)
-                                    await asyncio.sleep(5)
-                                    await response.delete()
                             if not found:
                                 await message.channel.send(message.author.mention + " No trial currently running")
-
-                    break
-
-            for code in tank:
-                if code in message.content.replace(" ", "").lower():
-                    while await self.config.inUse():
-                        await asyncio.sleep(1)
-                    await self.config.inUse.set(True)
-                    trialInfo = await self.config.channel(message.channel).trialInfo()
-                    if message.author.id in trialInfo[4] or message.author.id in trialInfo[5] or message.author.id in trialInfo[6]:
-                        await message.channel.send(message.author.mention + " you're already signed up!")
-                    else:
-                        if len(trialInfo[6]) >= trialInfo[3]:
-                            await message.channel.send(message.author.mention + " all tank spots are taken!")
+                            await self.config.channel(message.channel).trialInfo.set(trialInfo)
                         else:
+                            await message.channel.send(message.author.mention + " You weren't signed up!")
+
+                        break
+
+                for code in tank:
+                    if code in message.content.replace(" ", "").lower():
+                        while await self.config.inUse():
+                            await asyncio.sleep(1)
+                        await self.config.inUse.set(True)
+                        trialInfo = await self.config.channel(message.channel).trialInfo()
+                        if message.author.id in trialInfo[6]:
                             found = False
                             async for channelMessage in message.channel.history():
                                 if channelMessage.id == trialInfo[0]:
                                     found = True
-                                    response = await message.channel.send(message.author.mention + " You have been signed up as a tank")
-                                    await message.add_reaction("👍")
-                                    trialInfo[6].append(message.author.id)
+                                    await message.channel.send(message.author.mention + " You have been unsigned")
+                                    trialInfo[6].remove(message.author.id)
                                     newRow = "Tank (" + str(len(trialInfo[6])) + "/" + str(trialInfo[3]) + "): "
                                     for user in trialInfo[6]:
                                         newRow += self.bot.get_user(user).mention + ", "
                                     newRow = newRow[:-2] + "\n"
                                     trialInfo[7][3] = newRow
                                     await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
-                                    await self.config.channel(message.channel).trialInfo.set(trialInfo)
-                                    await asyncio.sleep(5)
-                                    await response.delete()
                             if not found:
                                 await message.channel.send(message.author.mention + " No trial currently running")
-                    break
+                            await self.config.channel(message.channel).trialInfo.set(trialInfo)
+                        else:
+                            await message.channel.send(message.author.mention + " You weren't signed up!")
 
-            dd = ["-dd", "-dps", "-damage"]
-            heal = ["-heal", "-healer"]
-            tank = ["-tank"]
-            reserve = ["-res", "-reserve"]
+                        break
+            except:
+                await message.channel.send("Something went wrong")
+            finally:
+                await self.config.inUse.set(False)
 
-            for code in dd:
-                if code in message.content.replace(" ", "").lower():
-                    while await self.config.inUse():
-                        await asyncio.sleep(1)
-                    await self.config.inUse.set(True)
-                    trialInfo = await self.config.channel(message.channel).trialInfo()
-                    if message.author.id in trialInfo[4]:
-                        found = False
-                        async for channelMessage in message.channel.history():
-                            if channelMessage.id == trialInfo[0]:
-                                found = True
-                                await message.channel.send(message.author.mention + " You have been unsigned")
-                                trialInfo[4].remove(message.author.id)
-                                newRow = "DD (" + str(len(trialInfo[4])) + "/" + str(trialInfo[1]) + "): "
-                                for user in trialInfo[4]:
-                                    newRow += self.bot.get_user(user).mention + ", "
-                                newRow = newRow[:-2] + "\n"
-                                trialInfo[7][1] = newRow
-                                await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
-                        if not found:
-                            await message.channel.send(message.author.mention + " No trial currently running")
-                        await self.config.channel(message.channel).trialInfo.set(trialInfo)
-                    else:
-                        await message.channel.send(message.author.mention + " You weren't signed up!")
-
-                    break
-
-            for code in heal:
-                if code in message.content.replace(" ", "").lower():
-                    while await self.config.inUse():
-                        await asyncio.sleep(1)
-                    await self.config.inUse.set(True)
-                    trialInfo = await self.config.channel(message.channel).trialInfo()
-                    if message.author.id in trialInfo[5]:
-                        found = False
-                        async for channelMessage in message.channel.history():
-                            if channelMessage.id == trialInfo[0]:
-                                found = True
-                                await message.channel.send(message.author.mention + " You have been unsigned")
-                                trialInfo[5].remove(message.author.id)
-                                newRow = "Heal (" + str(len(trialInfo[5])) + "/" + str(trialInfo[2]) + "): "
-                                for user in trialInfo[5]:
-                                    newRow += self.bot.get_user(user).mention + ", "
-                                newRow = newRow[:-2] + "\n"
-                                trialInfo[7][2] = newRow
-                                await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
-                        if not found:
-                            await message.channel.send(message.author.mention + " No trial currently running")
-                        await self.config.channel(message.channel).trialInfo.set(trialInfo)
-                    else:
-                        await message.channel.send(message.author.mention + " You weren't signed up!")
-
-                    break
-
-            for code in tank:
-                if code in message.content.replace(" ", "").lower():
-                    while await self.config.inUse():
-                        await asyncio.sleep(1)
-                    await self.config.inUse.set(True)
-                    trialInfo = await self.config.channel(message.channel).trialInfo()
-                    if message.author.id in trialInfo[6]:
-                        found = False
-                        async for channelMessage in message.channel.history():
-                            if channelMessage.id == trialInfo[0]:
-                                found = True
-                                await message.channel.send(message.author.mention + " You have been unsigned")
-                                trialInfo[6].remove(message.author.id)
-                                newRow = "Tank (" + str(len(trialInfo[6])) + "/" + str(trialInfo[3]) + "): "
-                                for user in trialInfo[6]:
-                                    newRow += self.bot.get_user(user).mention + ", "
-                                newRow = newRow[:-2] + "\n"
-                                trialInfo[7][3] = newRow
-                                await channelMessage.edit(content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
-                        if not found:
-                            await message.channel.send(message.author.mention + " No trial currently running")
-                        await self.config.channel(message.channel).trialInfo.set(trialInfo)
-                    else:
-                        await message.channel.send(message.author.mention + " You weren't signed up!")
-
-                    break
-            await self.config.inUse.set(False)
