@@ -72,7 +72,7 @@ class TrialSignup(commands.Cog):
     @commands.command()
     @commands.has_role("Officer")
     async def work(self, ctx):
-        """Adds a user to the trial"""
+        """Fixes it if it's stuck"""
         await self.config.inUse.set(False)
         await ctx.send("ok")
 
@@ -153,6 +153,19 @@ class TrialSignup(commands.Cog):
                         content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
 
                     await self.config.channel(trialChannel).trialInfo.set(trialInfo)
+
+    @commands.command()
+    @commands.has_role("Officer")
+    async def restoretrial(self, ctx, trialChannel: discord.TextChannel = None):
+        """For when zeb deletes it again"""
+        if not trialChannel:
+            trialChannel = ctx.channel
+        trialInfo = await self.config.channel(trialChannel).trialInfo()
+        newMessage = await trialChannel.send("Restoring")
+        await newMessage.edit(
+            content=trialInfo[7][0] + trialInfo[7][3] + trialInfo[7][2] + trialInfo[7][1])
+        trialInfo[0] = newMessage.id
+        await self.config.channel(trialChannel).trialInfo.set(trialInfo)
 
     @commands.command()
     @commands.has_role("Officer")
