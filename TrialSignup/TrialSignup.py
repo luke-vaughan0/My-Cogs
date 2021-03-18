@@ -169,6 +169,26 @@ class TrialSignup(commands.Cog):
 
     @commands.command()
     @commands.has_role("Officer")
+    async def verifytrial(self, ctx, trialChannel: discord.TextChannel = None):
+        """Fixes missing people and stuff"""
+        if not trialChannel:
+            trialChannel = ctx.channel
+        trialInfo = await self.config.channel(trialChannel).trialInfo()
+        for signup in trialInfo[4]:
+            try:
+                self.bot.get_user(signup)
+            except AttributeError:
+                #trialInfo[4].remove(signup)
+                #newRow = "DD (" + str(len(trialInfo[4])) + "/" + str(trialInfo[1]) + "): "
+                #for users in trialInfo[4]:
+                #    newRow += self.bot.get_user(users).mention + ", "
+                #newRow = newRow[:-2] + "\n"
+                #trialInfo[7][1] = newRow
+                await ctx.send("<@"+signup+"> is no longer in the server, they have been unsigned")
+        await self.config.channel(trialChannel).trialInfo.set(trialInfo)
+
+    @commands.command()
+    @commands.has_role("Officer")
     async def removesignup(self, ctx, user: discord.Member, role, trialChannel: discord.TextChannel = None):
         """Removes a user from the trial"""
         if not trialChannel:
