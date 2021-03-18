@@ -176,12 +176,30 @@ class TrialSignup(commands.Cog):
         trialInfo = await self.config.channel(trialChannel).trialInfo()
         for signup in trialInfo[4]:
             if self.bot.get_user(signup) is None:
-                #trialInfo[4].remove(signup)
-                #newRow = "DD (" + str(len(trialInfo[4])) + "/" + str(trialInfo[1]) + "): "
-                #for users in trialInfo[4]:
-                #    newRow += self.bot.get_user(users).mention + ", "
-                #newRow = newRow[:-2] + "\n"
-                #trialInfo[7][1] = newRow
+                trialInfo[4].remove(signup)
+                newRow = "DD (" + str(len(trialInfo[4])) + "/" + str(trialInfo[1]) + "): "
+                for users in trialInfo[4]:
+                    newRow += self.bot.get_user(users).mention + ", "
+                newRow = newRow[:-2] + "\n"
+                trialInfo[7][1] = newRow
+                await ctx.send("<@"+str(signup)+"> is no longer in the server, they have been unsigned")
+        for signup in trialInfo[5]:
+            if self.bot.get_user(signup) is None:
+                trialInfo[5].remove(signup)
+                newRow = "Heal (" + str(len(trialInfo[5])) + "/" + str(trialInfo[2]) + "): "
+                for users in trialInfo[5]:
+                    newRow += self.bot.get_user(users).mention + ", "
+                newRow = newRow[:-2] + "\n"
+                trialInfo[7][2] = newRow
+                await ctx.send("<@"+str(signup)+"> is no longer in the server, they have been unsigned")
+        for signup in trialInfo[6]:
+            if self.bot.get_user(signup) is None:
+                trialInfo[6].remove(signup)
+                newRow = "Tank (" + str(len(trialInfo[6])) + "/" + str(trialInfo[3]) + "): "
+                for users in trialInfo[6]:
+                    newRow += self.bot.get_user(users).mention + ", "
+                newRow = newRow[:-2] + "\n"
+                trialInfo[7][3] = newRow
                 await ctx.send("<@"+str(signup)+"> is no longer in the server, they have been unsigned")
         await ctx.send("Verification complete")
         await self.config.channel(trialChannel).trialInfo.set(trialInfo)
