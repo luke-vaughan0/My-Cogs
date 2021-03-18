@@ -175,9 +175,7 @@ class TrialSignup(commands.Cog):
             trialChannel = ctx.channel
         trialInfo = await self.config.channel(trialChannel).trialInfo()
         for signup in trialInfo[4]:
-            try:
-                self.bot.get_user(signup)
-            except AttributeError:
+            if self.bot.get_user(signup) is None:
                 #trialInfo[4].remove(signup)
                 #newRow = "DD (" + str(len(trialInfo[4])) + "/" + str(trialInfo[1]) + "): "
                 #for users in trialInfo[4]:
@@ -185,6 +183,7 @@ class TrialSignup(commands.Cog):
                 #newRow = newRow[:-2] + "\n"
                 #trialInfo[7][1] = newRow
                 await ctx.send("<@"+signup+"> is no longer in the server, they have been unsigned")
+        await ctx.send("Verification complete")
         await self.config.channel(trialChannel).trialInfo.set(trialInfo)
 
     @commands.command()
