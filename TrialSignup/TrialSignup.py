@@ -182,7 +182,7 @@ class TrialSignup(commands.Cog):
                 #    newRow += self.bot.get_user(users).mention + ", "
                 #newRow = newRow[:-2] + "\n"
                 #trialInfo[7][1] = newRow
-                await ctx.send("<@"+signup+"> is no longer in the server, they have been unsigned")
+                await ctx.send("<@"+str(signup)+"> is no longer in the server, they have been unsigned")
         await ctx.send("Verification complete")
         await self.config.channel(trialChannel).trialInfo.set(trialInfo)
 
