@@ -1024,12 +1024,13 @@ class RosterCheck(commands.Cog):
                 if row[3] != "" and str(ctx.guild.get_member_named(row[3])) != "None":
                     rosterMembers.append(row[3])
 
+            welcomeChannel = ctx.guild.get_channel(425707351874469908)
+            welcomeHistory = await welcomeChannel.history(limit=500).flatten()
 
             for member in esorole.members:
                 if str(member) not in rosterMembers and str(member) not in roleExempt:
-                    welcomeChannel = ctx.guild.get_channel(425707351874469908)
                     userMessages = []
-                    async for message in welcomeChannel.history(limit=500):
+                    for message in welcomeHistory:
                         if message.author == member:
                             userMessages.append(message)
                     if len(userMessages) == 0:
